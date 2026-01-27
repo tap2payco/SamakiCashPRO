@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum UserRole {
+  FARMER
+  VENDOR
+  ADMIN
+}
+
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique // Links to Supabase Auth User ID
+  fullName  String?
+  role      UserRole @default(FARMER)
+  phone     String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings Listing[]
+
+  @@map("profiles")
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  price       Decimal       @db.Decimal(10, 2)
+  quantity    Int
+  unit        String        // e.g., "kg", "ton"
+  status      ListingStatus @default(AVAILABLE)
+  sellerId    String
+  seller      Profile       @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("listings")
+}
