@@ -38,8 +38,8 @@ export default function CheckoutScreen() {
                 phoneNumber: phone
             });
 
-            // Navigate to success or order history
-            router.replace('/vendor'); // Navigate to Vendor Hub (as buyer view) for now
+            // Navigate to order history
+            router.replace('/orders');
         } catch (err) {
             console.error(err);
             setError('Payment initiation failed. Please try again.');

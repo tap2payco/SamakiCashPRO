@@ -3,21 +3,38 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
 }
 
-// ... Enums are supported by Prisma client mapping ...
+enum UserRole {
+  FARMER
+  VENDOR
+  ADMIN
+}
+
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+enum OrderStatus {
+  PENDING
+  ESCROW_FUNDED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
 
 model Profile {
   id        String   @id @default(uuid())
   userId    String   @unique // Links to Supabase Auth User ID
   fullName  String?
-  role      String   @default("FARMER") // SQLite doesn't support native enums well in migrations sometimes, but Prisma handles it. 
-  // actually simpler to use String for SQLite to avoid issues, but let's try Enum first.
-  // Prisma recommends String for SQLite if native enums are issues.
-  // But let's stick to Enum and see if Prisma handles it (it usually maps to string).
-  phone     String?
+  role      UserRole @default(FARMER)
+  phone     String?  // International format: +255...
   location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -34,11 +51,11 @@ model Listing {
   id          String        @id @default(uuid())
   title       String
   description String?
-  price       Decimal       // Removed @db.Decimal
+  price       Decimal       @db.Decimal(10, 2)
   quantity    Int
-  unit        String
+  unit        String        // e.g., "kg", "ton"
   imageUrl    String?
-  status      String        @default("AVAILABLE") // Changed to String for SQLite safety
+  status      ListingStatus @default(AVAILABLE)
   sellerId    String
   seller      Profile       @relation(fields: [sellerId], references: [id])
   createdAt   DateTime      @default(now())
@@ -58,12 +75,12 @@ model Order {
   listingId   String
   listing     Listing     @relation(fields: [listingId], references: [id])
   quantity    Int
-  unitPrice   Decimal     // Removed @db.Decimal
-  totalAmount Decimal     // Removed @db.Decimal
+  unitPrice   Decimal     @db.Decimal(10, 2)
+  totalAmount Decimal     @db.Decimal(10, 2)
   escrowId    String?
   transactionId String?
-  paymentProvider String?
-  status      String      @default("PENDING") // Changed to String
+  paymentProvider String? // MPESA, TIGOPESA
+  status      OrderStatus @default(PENDING)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -75,9 +92,9 @@ model Escrow {
   orderId       String   @unique
   buyerId       String
   sellerId      String
-  amount        Decimal  // Removed @db.Decimal
+  amount        Decimal  @db.Decimal(10, 2)
   transactionId String?
-  status        String   @default("AWAITING_PAYMENT")
+  status        String   @default("AWAITING_PAYMENT") // AWAITING_PAYMENT, FUNDS_HELD, RELEASED_TO_SELLER, REFUNDED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

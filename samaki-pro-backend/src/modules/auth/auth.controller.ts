@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia'
 import { AuthService } from './auth.service'
-import { UserRole } from '@prisma/client'
 
 export const authController = new Elysia({ prefix: '/auth' })
     .decorate('authService', new AuthService())
@@ -8,7 +7,7 @@ export const authController = new Elysia({ prefix: '/auth' })
     .post('/register', async ({ body, authService }) => {
         return await authService.register({
             ...body,
-            role: body.role as UserRole
+            role: body.role as string
         })
     }, {
         body: t.Object({

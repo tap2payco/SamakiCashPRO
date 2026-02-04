@@ -67,6 +67,7 @@ export default function MarketplaceScreen() {
             <View style={styles.header}>
                 <IconButton icon="arrow-left" onPress={() => router.back()} />
                 <Text variant="headlineSmall" style={{ fontWeight: 'bold', flex: 1 }}>Marketplace</Text>
+                <IconButton icon="receipt" onPress={() => router.push('/orders')} />
                 <IconButton icon="filter-variant" onPress={() => { }} />
             </View>
 

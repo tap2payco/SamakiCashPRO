@@ -1,9 +1,8 @@
 import { supabase } from '../../config/supabase'
 import prisma from '../../config/prisma'
-import { UserRole } from '@prisma/client'
 
 export class AuthService {
-    async register(data: { phone: string, password: string, fullName: string, role: UserRole }) {
+    async register(data: { phone: string, password: string, fullName: string, role: string }) {
         // 1. Create Supabase auth user
         const { data: authData, error } = await supabase.auth.signUp({
             phone: data.phone,

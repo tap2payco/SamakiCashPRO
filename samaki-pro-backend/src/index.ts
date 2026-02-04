@@ -8,6 +8,7 @@ import { escrowController } from './modules/escrow/escrow.service'
 import { agentsController } from './modules/agents/agents.controller'
 import { ordersController } from './modules/orders/order.controller'
 import { authController } from './modules/auth/auth.controller'
+import { cageController } from './modules/cages/cage.controller'
 
 const app = new Elysia()
     .use(swagger())
@@ -17,7 +18,9 @@ const app = new Elysia()
     .use(escrowController)
     .use(agentsController)
     .use(ordersController)
+    .use(ordersController)
     .use(authController)
+    .use(cageController)
     .get('/', () => 'Samaki PRO Backend API')
     .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
     .listen(3000)

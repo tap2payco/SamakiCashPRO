@@ -6,8 +6,17 @@ import Constants from 'expo-constants';
 // For physical device, retrieve standard private IP (requires config) or use Tunnel URL (ngrok)
 const getBaseUrl = () => {
     if (Platform.OS === 'web') return 'http://localhost:3000';
+
+    // For physical device testing (dynamic IP)
+    if (Constants.expoConfig?.hostUri) {
+        const host = Constants.expoConfig.hostUri.split(':')[0];
+        return `http://${host}:3000`;
+    }
+
+    // Fallback for emulator if hostUri is missing
     if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
-    return 'http://localhost:3000'; // Fallback
+
+    return 'http://localhost:3000';
 };
 
 export const API_URL = getBaseUrl();

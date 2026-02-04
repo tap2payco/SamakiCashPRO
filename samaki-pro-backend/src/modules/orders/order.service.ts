@@ -1,18 +1,15 @@
-import { OrderStatus, PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import prisma from '../../config/prisma'
 import { EscrowService } from '../escrow/escrow.service'
 import { PaymentSimulationService } from '../payments/payment.simulation'
-
-const escrowService = new EscrowService()
-const paymentService = new PaymentSimulationService()
 
 export class OrderService {
     async createOrder(data: {
         buyerId: string
         listingId: string
         quantity: number
-        paymentProvider: 'MPESA' | 'TIGOPESA'
-        phoneNumber: string
+        paymentProvider?: string
+        phoneNumber?: string
     }) {
         // 1. Get listing to verify availability and price
         const listing = await prisma.listing.findUnique({
@@ -23,51 +20,25 @@ export class OrderService {
         if (!listing) throw new Error('Listing not found')
         if (listing.quantity < data.quantity) throw new Error('Insufficient stock')
 
-        const totalAmount = Number(listing.price) * data.quantity
+        // Calculate totals
+        const unitPrice = listing.price
+        const totalAmount = Number(unitPrice) * data.quantity
 
-        // 2. Create Order in Database
-        const order = await prisma.order.create({
-            data: {
-                buyerId: data.buyerId,
-                sellerId: listing.sellerId,
-                listingId: listing.id,
-                quantity: data.quantity,
-                unitPrice: listing.price,
-                totalAmount: totalAmount,
-                paymentProvider: data.paymentProvider,
-                status: OrderStatus.PENDING
-            }
+        return prisma.$transaction(async (tx) => {
+            const order = await tx.order.create({
+                data: {
+                    buyerId: data.buyerId,
+                    sellerId: listing.sellerId,
+                    listingId: data.listingId,
+                    quantity: data.quantity,
+                    unitPrice: unitPrice,
+                    totalAmount: totalAmount,
+                    paymentProvider: data.paymentProvider,
+                    status: 'PENDING'
+                }
+            })
+            return order
         })
-
-        // 3. Initiate Payment
-        const payment = await paymentService.initiatePayment({
-            amount: totalAmount,
-            phoneNumber: data.phoneNumber,
-            provider: data.paymentProvider
-        })
-
-        // 4. Create Escrow Record
-        const escrow = await escrowService.createEscrow({
-            orderId: order.id,
-            buyerId: data.buyerId,
-            sellerId: listing.sellerId,
-            amount: totalAmount
-        })
-
-        // 5. Update Order with Escrow ID & Transaction ID
-        const updatedOrder = await prisma.order.update({
-            where: { id: order.id },
-            data: {
-                escrowId: escrow.id,
-                transactionId: payment.transactionId
-            }
-        })
-
-        return {
-            order: updatedOrder,
-            paymentInstruction: payment.message,
-            simulationNote: payment.simulationNote
-        }
     }
 
     async getOrderById(id: string) {
@@ -97,10 +68,10 @@ export class OrderService {
         })
     }
 
-    async updateOrderStatus(id: string, status: OrderStatus) {
+    async updateOrderStatus(id: string, status: string) {
         return prisma.order.update({
             where: { id },
-            data: { status }
+            data: { status: status as any }
         })
     }
 }
