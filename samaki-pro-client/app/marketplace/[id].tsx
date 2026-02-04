@@ -1,12 +1,14 @@
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Button, Card, Divider } from 'react-native-paper';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 
 export default function ListingDetailScreen() {
     const { id } = useLocalSearchParams();
     const [listing, setListing] = useState<any>(null);
+    const [quantity, setQuantity] = useState(1);
+    const router = useRouter();
 
     useEffect(() => {
         if (id) {
@@ -37,8 +39,29 @@ export default function ListingDetailScreen() {
                     <Text>{listing.seller?.fullName}</Text>
                     <Text>{listing.seller?.location}</Text>
                 </Card.Content>
-                <Card.Actions style={{ padding: 20 }}>
-                    <Button mode="contained" style={styles.buyButton} onPress={() => console.log('Buy')}>
+                <Card.Actions style={{ padding: 20, flexDirection: 'column', alignItems: 'stretch' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 }}>
+                        <Text variant="bodyLarge">Quantity:</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Button mode="outlined" compact onPress={() => setQuantity(Math.max(1, quantity - 1))}>-</Button>
+                            <Text style={{ marginHorizontal: 15, fontWeight: 'bold' }}>{quantity}</Text>
+                            <Button mode="outlined" compact onPress={() => setQuantity(Math.min(listing.quantity, quantity + 1))}>+</Button>
+                        </View>
+                    </View>
+                    <Button
+                        mode="contained"
+                        style={styles.buyButton}
+                        onPress={() => router.push({
+                            pathname: '/checkout',
+                            params: {
+                                listingId: listing.id,
+                                title: listing.title,
+                                price: listing.price,
+                                unit: listing.unit,
+                                quantity: quantity
+                            }
+                        })}
+                    >
                         Buy Now
                     </Button>
                 </Card.Actions>

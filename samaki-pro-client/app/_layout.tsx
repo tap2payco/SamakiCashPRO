@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { AuthProvider } from '../contexts/AuthContext';
 
 // Define custom theme
 const theme = {
@@ -15,9 +16,11 @@ const theme = {
 export default function RootLayout() {
     return (
         <PaperProvider theme={theme}>
-            <Stack>
-                <Stack.Screen name="index" options={{ title: 'Samaki PRO', headerShown: false }} />
-            </Stack>
+            <AuthProvider>
+                <Stack>
+                    <Stack.Screen name="index" options={{ title: 'Samaki PRO', headerShown: false }} />
+                </Stack>
+            </AuthProvider>
         </PaperProvider>
     );
 }
