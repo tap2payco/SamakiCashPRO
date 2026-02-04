@@ -1,53 +1,56 @@
 import { Elysia, t } from 'elysia'
-
-// Mock Escrow Database
-const escrowLedger = new Map<string, any>()
+import prisma from '../../config/prisma'
 
 export class EscrowService {
-    async createEscrow(data: { listingId: string, buyerId: string, sellerId: string, amount: number }) {
-        const escrowId = `ESC_${Date.now()}`
-
-        const escrow = {
-            id: escrowId,
-            ...data,
-            status: 'AWAITING_PAYMENT',
-            createdAt: new Date().toISOString()
-        }
-
-        escrowLedger.set(escrowId, escrow)
-        return escrow
+    async createEscrow(data: { orderId: string, buyerId: string, sellerId: string, amount: number }) {
+        return prisma.escrow.create({
+            data: {
+                orderId: data.orderId,
+                buyerId: data.buyerId,
+                sellerId: data.sellerId,
+                amount: data.amount,
+                status: 'AWAITING_PAYMENT'
+            }
+        })
     }
 
     async confirmPayment(escrowId: string, transactionId: string) {
-        const escrow = escrowLedger.get(escrowId)
+        const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } })
         if (!escrow) throw new Error('Escrow record not found')
 
-        // In a real app, we would verify transactionId with PaymentService here
-        escrow.status = 'FUNDS_HELD'
-        escrow.transactionId = transactionId
-
-        escrowLedger.set(escrowId, escrow)
-        return escrow
+        return prisma.escrow.update({
+            where: { id: escrowId },
+            data: {
+                status: 'FUNDS_HELD',
+                transactionId
+            }
+        })
     }
 
     async releaseFunds(escrowId: string) {
-        const escrow = escrowLedger.get(escrowId)
+        const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } })
         if (!escrow) throw new Error('Escrow record not found')
 
         if (escrow.status !== 'FUNDS_HELD') throw new Error('Funds are not currently held')
 
-        escrow.status = 'RELEASED_TO_SELLER'
-        escrowLedger.set(escrowId, escrow)
-        return escrow
+        return prisma.escrow.update({
+            where: { id: escrowId },
+            data: { status: 'RELEASED_TO_SELLER' }
+        })
     }
 
     async refundBuyer(escrowId: string) {
-        const escrow = escrowLedger.get(escrowId)
+        const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } })
         if (!escrow) throw new Error('Escrow record not found')
 
-        escrow.status = 'REFUNDED'
-        escrowLedger.set(escrowId, escrow)
-        return escrow
+        return prisma.escrow.update({
+            where: { id: escrowId },
+            data: { status: 'REFUNDED' }
+        })
+    }
+
+    async getByOrderId(orderId: string) {
+        return prisma.escrow.findUnique({ where: { orderId } })
     }
 }
 
@@ -55,7 +58,7 @@ export const escrowController = new Elysia({ prefix: '/escrow' })
     .decorate('escrowService', new EscrowService())
     .post('/create', ({ body, escrowService }) => escrowService.createEscrow(body), {
         body: t.Object({
-            listingId: t.String(),
+            orderId: t.String(),
             buyerId: t.String(),
             sellerId: t.String(),
             amount: t.Number()

@@ -18,17 +18,30 @@ enum ListingStatus {
   PENDING
 }
 
+enum OrderStatus {
+  PENDING
+  ESCROW_FUNDED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
 model Profile {
   id        String   @id @default(uuid())
   userId    String   @unique // Links to Supabase Auth User ID
   fullName  String?
   role      UserRole @default(FARMER)
-  phone     String?
+  phone     String?  // International format: +255...
   location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  listings Listing[]
+  listings     Listing[]
+  buyerOrders  Order[]   @relation("BuyerOrders")
+  sellerOrders Order[]   @relation("SellerOrders")
 
   @@map("profiles")
 }
@@ -40,11 +53,49 @@ model Listing {
   price       Decimal       @db.Decimal(10, 2)
   quantity    Int
   unit        String        // e.g., "kg", "ton"
+  imageUrl    String?
   status      ListingStatus @default(AVAILABLE)
   sellerId    String
   seller      Profile       @relation(fields: [sellerId], references: [id])
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  orders Order[]
+
   @@map("listings")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  buyerId     String
+  buyer       Profile     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId    String
+  seller      Profile     @relation("SellerOrders", fields: [sellerId], references: [id])
+  listingId   String
+  listing     Listing     @relation(fields: [listingId], references: [id])
+  quantity    Int
+  unitPrice   Decimal     @db.Decimal(10, 2)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  escrowId    String?
+  transactionId String?
+  paymentProvider String? // MPESA, TIGOPESA
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model Escrow {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  buyerId       String
+  sellerId      String
+  amount        Decimal  @db.Decimal(10, 2)
+  transactionId String?
+  status        String   @default("AWAITING_PAYMENT") // AWAITING_PAYMENT, FUNDS_HELD, RELEASED_TO_SELLER, REFUNDED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("escrows")
 }

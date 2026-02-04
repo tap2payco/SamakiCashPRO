@@ -6,6 +6,8 @@ import { marketplaceController } from './modules/marketplace/marketplace.control
 import { paymentController } from './modules/payments/payment.simulation'
 import { escrowController } from './modules/escrow/escrow.service'
 import { agentsController } from './modules/agents/agents.controller'
+import { ordersController } from './modules/orders/order.controller'
+import { authController } from './modules/auth/auth.controller'
 
 const app = new Elysia()
     .use(swagger())
@@ -14,6 +16,8 @@ const app = new Elysia()
     .use(paymentController)
     .use(escrowController)
     .use(agentsController)
+    .use(ordersController)
+    .use(authController)
     .get('/', () => 'Samaki PRO Backend API')
     .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
     .listen(3000)
