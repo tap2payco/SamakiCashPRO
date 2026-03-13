@@ -136,3 +136,85 @@ model SensorReading {
 
   @@map("sensor_readings")
 }
+
+// ------------------------------------------------------
+// Phase 3 Additions: AIoT & Fintech Advanced Modules
+// ------------------------------------------------------
+
+model CreditScore {
+    id          String   @id @default(uuid())
+    farmerId    String   @unique
+    farmer      Profile  @relation(fields: [farmerId], references: [id])
+    score       Int      // 0 - 1000
+    riskLevel   String   // LOW, MEDIUM, HIGH
+    loanLimit   Decimal
+    lastUpdated DateTime @default(now())
+    history     String?  // JSON string storing calculation metrics
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("credit_scores")
+}
+
+model InsurancePolicy {
+    id            String   @id @default(uuid())
+    cageId        String   @unique
+    cage          Cage     @relation(fields: [cageId], references: [id])
+    farmerId      String
+    farmer        Profile  @relation(fields: [farmerId], references: [id])
+    premiumAmount Decimal
+    coverageLimit Decimal
+    status        String   @default("ACTIVE") // ACTIVE, TRIGGERED, PAID_OUT, CANCELLED
+    triggerData   String?  // JSON string storing the sensor data that triggered it
+    startDate     DateTime @default(now())
+    endDate       DateTime
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@map("insurance_policies")
+}
+
+// ------------------------------------------------------
+// Phase 4 Additions: Traceability, Blue Carbon, Assets
+// ------------------------------------------------------
+
+model ExportPassport {
+    id            String   @id @default(uuid())
+    batchId       String   @unique
+    batch         Batch    @relation(fields: [batchId], references: [id])
+    farmerId      String
+    farmer        Profile  @relation(fields: [farmerId], references: [id])
+    hashData      String   // Mock cryptographic hash
+    waterQuality  String   // 'Pass', 'Fail'
+    issueDate     DateTime @default(now())
+
+    @@map("export_passports")
+}
+
+model CarbonCredit {
+    id            String   @id @default(uuid())
+    farmerId      String   
+    farmer        Profile  @relation(fields: [farmerId], references: [id])
+    batchId       String
+    batch         Batch    @relation(fields: [batchId], references: [id])
+    tokensEarned  Decimal  // Mock carbon tokens based on biomass
+    status        String   @default("AVAILABLE") // AVAILABLE, SOLD
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@map("carbon_credits")
+}
+
+model ColdChainAsset {
+    id            String   @id @default(uuid())
+    vendorId      String
+    vendor        Profile  @relation(fields: [vendorId], references: [id])
+    assetType     String   // e.g., 'Solar Cooler 50L'
+    totalCost     Decimal
+    amountPaid    Decimal  @default(0)
+    status        String   @default("LEASING") // LEASING, OWNED, DEFAULTED
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@map("cold_chain_assets")
+}

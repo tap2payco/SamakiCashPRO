@@ -19,15 +19,22 @@ export default function VendorDashboard() {
 
     const fetchOrders = async () => {
         try {
-            // Fetch orders where the current user is the buyer (as a vendor buying from farmers)
-            // or seller (if they are selling to others). 
-            // For this MVP, let's assume Vendors BUY from Farmers.
-            const data = await api.get(`/orders/buyer/${user?.id}`);
+            // Fetch orders where the current user is the SELLER (Vendor selling to buyers, or Farmer selling to Vendor)
+            const data = await api.get(`/orders/seller/${user?.id}`);
             setOrders(data);
         } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+        try {
+            await api.post(`/orders/${orderId}/status`, { status: newStatus }, { method: 'PATCH' });
+            fetchOrders(); // Refresh table
+        } catch (err) {
+            console.error('Failed to update status', err);
         }
     };
 
@@ -43,9 +50,9 @@ export default function VendorDashboard() {
                         </View>
                     </View>
                     <Chip
-                        icon={item.status === 'COMPLETED' ? 'check' : 'clock'}
-                        style={{ backgroundColor: item.status === 'COMPLETED' ? '#E8F5E9' : '#FFF3E0' }}
-                        textStyle={{ color: item.status === 'COMPLETED' ? 'green' : 'orange', fontSize: 12 }}>
+                        icon={item.status === 'COMPLETED' ? 'check' : item.status === 'PAID' ? 'cash' : 'clock'}
+                        style={{ backgroundColor: item.status === 'COMPLETED' ? '#E8F5E9' : item.status === 'PAID' ? '#E3F2FD' : '#FFF3E0' }}
+                        textStyle={{ color: item.status === 'COMPLETED' ? 'green' : item.status === 'PAID' ? '#1565C0' : 'orange', fontSize: 12 }}>
                         {item.status}
                     </Chip>
                 </View>
@@ -62,16 +69,35 @@ export default function VendorDashboard() {
                     </Text>
                 </View>
 
-                {item.seller && (
+                {item.buyer && (
                     <View style={[styles.row, { marginTop: 15, backgroundColor: '#F5F5F5', padding: 8, borderRadius: 8 }]}>
-                        <Text variant="bodySmall">Seller: {item.seller.fullName}</Text>
-                        <Text variant="bodySmall">{item.seller.phone}</Text>
+                        <View>
+                            <Text variant="bodySmall" style={{ color: '#666' }}>Buyer</Text>
+                            <Text variant="bodyMedium" style={{ fontWeight: '500' }}>{item.buyer.fullName || 'Guest'}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text variant="bodySmall" style={{ color: '#666' }}>Contact</Text>
+                            <Text variant="bodyMedium">{item.buyer.phone || 'N/A'}</Text>
+                        </View>
                     </View>
                 )}
             </Card.Content>
             <Card.Actions>
-                <Button mode="outlined" compact onPress={() => { }}>Track</Button>
-                <Button mode="contained" compact onPress={() => { }}>View Details</Button>
+                {item.status === 'PAID' && (
+                    <Button mode="contained" onPress={() => handleUpdateStatus(item.id, 'DISPATCHED')}>
+                        Dispatch Order
+                    </Button>
+                )}
+                {item.status === 'DISPATCHED' && (
+                    <Button mode="contained" buttonColor="green" onPress={() => handleUpdateStatus(item.id, 'COMPLETED')}>
+                        Mark Completed
+                    </Button>
+                )}
+                {item.status === 'PENDING' && (
+                    <Button mode="outlined" onPress={() => handleUpdateStatus(item.id, 'CANCELLED')} textColor="red">
+                        Cancel
+                    </Button>
+                )}
             </Card.Actions>
         </Card>
     );
@@ -105,14 +131,26 @@ export default function VendorDashboard() {
                     <Card style={[styles.statCard, { backgroundColor: '#FFF3E0' }]}>
                         <Card.Content style={styles.center}>
                             <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#EF6C00' }}>
-                                {orders.filter(o => o.status === 'PENDING').length}
+                                {orders.filter(o => o.status === 'PAID' || o.status === 'PENDING').length}
                             </Text>
-                            <Text variant="labelMedium" style={{ color: '#EF6C00' }}>Pending</Text>
+                            <Text variant="labelMedium" style={{ color: '#EF6C00' }}>Active</Text>
                         </Card.Content>
                     </Card>
                 </View>
 
-                <Text variant="titleLarge" style={styles.sectionTitle}>Recent Orders</Text>
+                {/* Quick Actions */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 }}>
+                    <Button 
+                        mode="contained" 
+                        icon="solar-panel-large"
+                        style={{ flex: 1, backgroundColor: '#00609C' }}
+                        onPress={() => router.push('/vendor/assets')}
+                    >
+                        Cold Chain Financing
+                    </Button>
+                </View>
+
+                <Text variant="titleLarge" style={styles.sectionTitle}>Manage Orders</Text>
 
                 {loading ? (
                     <ActivityIndicator style={{ marginTop: 20 }} />

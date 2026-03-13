@@ -9,6 +9,12 @@ import { agentsController } from './modules/agents/agents.controller'
 import { ordersController } from './modules/orders/order.controller'
 import { authController } from './modules/auth/auth.controller'
 import { cageController } from './modules/cages/cage.controller'
+import { creditController } from './modules/credit/credit.service'
+import { insuranceController } from './modules/insurance/insurance.service'
+import { visionController } from './modules/ai-vision/vision.controller'
+import { traceabilityController } from './modules/traceability/traceability.service'
+import { carbonController } from './modules/carbon/carbon.service'
+import { assetsController } from './modules/assets/assets.service'
 
 const app = new Elysia()
     .use(swagger())
@@ -18,9 +24,14 @@ const app = new Elysia()
     .use(escrowController)
     .use(agentsController)
     .use(ordersController)
-    .use(ordersController)
     .use(authController)
     .use(cageController)
+    .use(creditController)
+    .use(insuranceController)
+    .use(visionController)
+    .use(traceabilityController)
+    .use(carbonController)
+    .use(assetsController)
     .get('/', () => 'Samaki PRO Backend API')
     .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
     .listen(3000)

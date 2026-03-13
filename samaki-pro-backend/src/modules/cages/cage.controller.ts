@@ -72,10 +72,13 @@ export const cageController = new Elysia({ prefix: '/cages' })
 
     // Record sensor reading ( IoT )
     .post('/:id/readings', async ({ params: { id }, body, cageService }) => {
-        return await cageService.recordReading({
-            cageId: id,
-            ...body
-        })
+        const reading = await cageService.recordSensorReading(id, body as any)
+        
+        // Phase 3: Trigger Parametric Insurance Check on every new reading
+        const insuranceService = new InsuranceService()
+        await insuranceService.evaluateConditions()
+
+        return reading
     }, {
         body: t.Object({
             temperature: t.Optional(t.Number()),

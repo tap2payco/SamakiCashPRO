@@ -25,6 +25,7 @@ export class OrderService {
         const totalAmount = Number(unitPrice) * data.quantity
 
         return prisma.$transaction(async (tx) => {
+            // 2. Create the Order
             const order = await tx.order.create({
                 data: {
                     buyerId: data.buyerId,
@@ -37,6 +38,50 @@ export class OrderService {
                     status: 'PENDING'
                 }
             })
+
+            // 3. Create the Escrow record holding the funds
+            await tx.escrow.create({
+                data: {
+                    orderId: order.id,
+                    buyerId: data.buyerId,
+                    sellerId: listing.sellerId,
+                    amount: totalAmount,
+                    status: 'AWAITING_PAYMENT'
+                }
+            })
+
+            // 4. Initiate the Mobile Money Payment (Simulation)
+            if (data.paymentProvider && data.phoneNumber) {
+                const paymentSim = new PaymentSimulationService()
+                const paymentReq = await paymentSim.initiatePayment({
+                    amount: totalAmount,
+                    phoneNumber: data.phoneNumber,
+                    provider: data.paymentProvider as 'MPESA' | 'TIGOPESA'
+                })
+                
+                // For MVP, if payment is initiated, we simulate that they approved it successfully immediately
+                await paymentSim.simulateCallback(paymentReq.transactionId, true)
+
+                // Now update Escrow to FUNDS_HELD to indicate successful payment
+                await tx.escrow.update({
+                    where: { orderId: order.id },
+                    data: { 
+                        status: 'FUNDS_HELD',
+                        transactionId: paymentReq.transactionId
+                    }
+                })
+
+                // And update Order to PAID / PROCESSING
+                const paidOrder = await tx.order.update({
+                    where: { id: order.id },
+                    data: { 
+                        status: 'PAID',
+                        transactionId: paymentReq.transactionId
+                    }
+                })
+                return paidOrder
+            }
+
             return order
         })
     }

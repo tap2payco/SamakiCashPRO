@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Samaki PRO",
-    "slug": "samaki-pro-client",
+    "slug": "samakipro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,6 +34,13 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e9050128-00c7-46bd-a703-5d750f8ae766"
+      }
+    },
+    "owner": "samakipro"
   }
 }

@@ -117,6 +117,40 @@ export default function FarmerDashboard() {
                 </Card>
             </View>
 
+            {/* Quick Actions */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, gap: 8 }}>
+                <Button 
+                    mode="contained" 
+                    icon="credit-card"
+                    style={{ flex: 1, backgroundColor: '#00609C' }}
+                    labelStyle={{ fontSize: 12 }}
+                    onPress={() => router.push('/farmer/credit')}
+                    compact
+                >
+                    Credit
+                </Button>
+                <Button 
+                    mode="contained" 
+                    icon="shield-check"
+                    style={{ flex: 1, backgroundColor: '#00609C' }}
+                    labelStyle={{ fontSize: 12 }}
+                    onPress={() => router.push('/farmer/insurance')}
+                    compact
+                >
+                    Insurance
+                </Button>
+                <Button 
+                    mode="contained" 
+                    icon="leaf"
+                    style={{ flex: 1, backgroundColor: '#2E7D32' }}
+                    labelStyle={{ fontSize: 12 }}
+                    onPress={() => router.push('/farmer/carbon')}
+                    compact
+                >
+                    Carbon
+                </Button>
+            </View>
+
             <Text variant="titleLarge" style={styles.sectionTitle}>Cage Status</Text>
 
             {loading ? (
@@ -138,7 +172,7 @@ export default function FarmerDashboard() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8F9FA', padding: 20 },
+    container: { flexGrow: 1, backgroundColor: '#F8F9FA', padding: 20 },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
     statCard: { width: '31%', borderRadius: 12 },
