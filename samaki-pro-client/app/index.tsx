@@ -1,138 +1,79 @@
+import React from 'react';
 import { View, StyleSheet, ScrollView, ImageBackground } from 'react-native';
-import { Text, Card, TouchableRipple, useTheme, IconButton, Button, Avatar } from 'react-native-paper';
-import { Link, useRouter } from 'expo-router';
+import { Text, Button, IconButton } from 'react-native-paper';
+import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';
+import { BlurView } from 'expo-blur';
+import { useAuth } from '~/contexts/AuthContext';
 
-export default function HomeScreen() {
-    const theme = useTheme();
+export default function LandingScreen() {
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user, loading } = useAuth();
 
-    const menuItems = [
-        {
-            title: 'Marketplace',
-            subtitle: 'Buy Fish Stock',
-            icon: 'store',
-            route: '/marketplace',
-            color: '#E3F2FD', // Light Blue
-            iconColor: '#1976D2',
-            roles: ['VENDOR', 'BUYER', 'ADMIN', undefined] // Public/Vendor
-        },
-        {
-            title: 'My Orders',
-            subtitle: 'Track Purchases',
-            icon: 'receipt',
-            route: '/orders',
-            color: '#E0F7FA', // Cyan
-            iconColor: '#006064',
-            roles: ['VENDOR', 'BUYER']
-        },
-        {
-            title: 'Vendor Hub',
-            subtitle: 'Manage Orders',
-            icon: 'truck-delivery',
-            route: '/vendor',
-            color: '#FFF3E0', // Light Orange
-            iconColor: '#F57C00',
-            roles: ['VENDOR']
-        },
-        {
-            title: 'My Farm', // Alias for Farmer Dashboard? 
-            // For now, redirect to Create Listing or a Farmer specific page
-            subtitle: 'Sell Stock',
-            icon: 'fish',
-            route: '/marketplace/create',
-            color: '#E8F5E9', // Light Green
-            iconColor: '#388E3C',
-            roles: ['FARMER']
-        },
-        {
-            title: 'Insights',
-            subtitle: 'Market Intelligence',
-            icon: 'chart-line',
-            route: '/farmer', // Placeholder
-            color: '#F3E5F5', // Light Purple
-            iconColor: '#7B1FA2',
-            roles: ['FARMER', 'ADMIN']
-        }
-    ];
+    if (loading) return null;
 
-    const filteredItems = menuItems.filter(item => {
-        if (!user) return item.roles.includes(undefined);
-        return item.roles.includes(user.role) || item.roles.includes(undefined);
-    });
+    if (user) {
+        // Authenticated users skip the landing page and jump straight into the ERP
+        return <Redirect href="/dashboard" />;
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                
                 <View style={styles.header}>
                     <View style={{ flex: 1 }}>
-                        <Text variant="displaySmall" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Samaki PRO</Text>
-                        <Text variant="titleMedium" style={{ color: '#666', marginTop: 5 }}>
-                            {user ? `Welcome, ${user.fullName?.split(' ')[0]}` : "Empowering Mwanza's Blue Economy"}
-                        </Text>
+                        <Text variant="displaySmall" style={styles.title}>Samaki ERP</Text>
+                        <Text variant="titleMedium" style={styles.subtitle}>Powering the Blue Economy</Text>
                     </View>
-                    {user ? (
-                        <IconButton icon="logout" onPress={logout} iconColor={theme.colors.error} />
-                    ) : (
-                        <Button mode="contained" onPress={() => router.push('/auth/login')} style={{ borderRadius: 20 }}>
-                            Login
-                        </Button>
-                    )}
                 </View>
 
-                {!user && (
-                    <View style={styles.promoSection}>
-                        <Card style={styles.promoCard}>
-                            <Card.Cover source={{ uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop' }} style={styles.promoImage} />
-                            <Card.Content>
-                                <Text variant="titleLarge" style={{ marginTop: 10, fontWeight: 'bold' }}>Join the Blue Revolution</Text>
-                                <Text variant="bodyMedium" style={{ marginTop: 5 }}>Connect directly with buyers and access fair financing.</Text>
-                                <Button mode="contained" style={{ marginTop: 15 }} onPress={() => router.push('/auth/register')}>
-                                    Get Started
-                                </Button>
-                            </Card.Content>
-                        </Card>
-                    </View>
-                )}
-
-                <View style={styles.grid}>
-                    {filteredItems.map((item, index) => (
-                        <Card key={index} style={[styles.card, { backgroundColor: item.color }]} mode="elevated" onPress={() => router.push(item.route as any)}>
-                            <TouchableRipple style={styles.cardRipple} borderless>
-                                <View style={styles.cardContent}>
-                                    <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,255,255,0.7)' }]}>
-                                        <IconButton icon={item.icon} iconColor={item.iconColor} size={32} />
-                                    </View>
-                                    <View style={styles.textContainer}>
-                                        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: '#333' }}>{item.title}</Text>
-                                        <Text variant="bodySmall" style={{ color: '#555' }}>{item.subtitle}</Text>
-                                    </View>
+                <View style={styles.promoSection}>
+                    <BlurView intensity={30} tint="light" style={styles.promoCard}>
+                        <ImageBackground 
+                            source={{ uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop' }} 
+                            style={styles.promoImage} 
+                            imageStyle={{ opacity: 0.6 }}
+                        >
+                            <View style={styles.promoOverlay}>
+                                <Text variant="titleLarge" style={styles.promoTitle}>Industry-Grade Aquaculture Operations</Text>
+                                <Text variant="bodyMedium" style={styles.promoSubtitle}>
+                                    Unifying AI Farm telemetry, Traceable B2B Commerce, and Embedded Escrow into a single enterprise platform.
+                                </Text>
+                                <View style={{ flexDirection: 'row', gap: 15, marginTop: 25 }}>
+                                    <Button mode="contained" buttonColor="#00E676" style={styles.promoBtn} onPress={() => router.push('/auth/register')}>
+                                        Enroll Farm
+                                    </Button>
+                                    <Button mode="outlined" textColor="white" style={styles.promoBtnBorder} onPress={() => router.push('/auth/login')}>
+                                        Operator Login
+                                    </Button>
                                 </View>
-                            </TouchableRipple>
-                        </Card>
-                    ))}
+                            </View>
+                        </ImageBackground>
+                    </BlurView>
                 </View>
 
-                <Text variant="bodySmall" style={styles.footer}>Powered by Bun, Elysia & Expo</Text>
+                <Text variant="bodySmall" style={styles.footer}>Samaki Enterprise Systems © 2026</Text>
             </ScrollView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8F9FA' },
-    scrollContent: { padding: 20, maxWidth: 800, alignSelf: 'center', width: '100%' },
-    header: { marginBottom: 30, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 30 },
-    card: { width: '48%', marginBottom: 15, borderRadius: 16, overflow: 'hidden' },
-    cardRipple: { flex: 1, padding: 15 },
-    cardContent: { alignItems: 'flex-start' },
-    iconContainer: { borderRadius: 12, marginBottom: 10, marginLeft: -10 },
-    textContainer: { marginTop: 5 },
-    promoSection: { marginBottom: 30 },
-    promoCard: { borderRadius: 16, overflow: 'hidden' },
-    promoImage: { height: 150 },
-    footer: { textAlign: 'center', color: '#999', marginTop: 10 }
+    container: { flex: 1 },
+    scrollContent: { padding: 20, maxWidth: 800, alignSelf: 'center', width: '100%', paddingBottom: 50 },
+    header: { marginBottom: 35, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    title: { color: '#FFFFFF', fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 },
+    subtitle: { color: '#B3E5FC', marginTop: 5, letterSpacing: 0.5 },
+    
+    promoSection: { marginBottom: 40, borderRadius: 24, overflow: 'hidden', elevation: 15, shadowColor: '#000', shadowOffset: { height: 8, width: 0 }, shadowOpacity: 0.4, shadowRadius: 10 },
+    promoCard: { borderRadius: 24, overflow: 'hidden' },
+    promoImage: { height: 350, justifyContent: 'flex-end' }, // taller for landing
+    promoOverlay: { padding: 30, backgroundColor: 'rgba(0,25,50,0.5)', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    promoTitle: { color: 'white', fontWeight: 'bold', fontSize: 26 },
+    promoSubtitle: { color: '#E0F7FA', marginTop: 10, lineHeight: 22 },
+    promoBtn: { borderRadius: 12, width: 160 },
+    promoBtnBorder: { borderRadius: 12, width: 160, borderColor: 'rgba(255,255,255,0.5)', borderWidth: 1 },
+    
+    footer: { textAlign: 'center', color: 'rgba(255,255,255,0.4)', marginTop: 20, letterSpacing: 0.5 }
 });

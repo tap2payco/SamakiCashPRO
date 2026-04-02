@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Button, Surface, Avatar, Title, Paragraph, Dialog, Portal, TextInput } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { api } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import { api } from '~/services/api';
+import { useAuth } from '~/contexts/AuthContext';
 
 export default function BlueCarbonScreen() {
     const router = useRouter();

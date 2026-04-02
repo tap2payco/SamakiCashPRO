@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { Text, Card, Chip, ActivityIndicator, Divider, IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../../contexts/AuthContext';
-import { api } from '../../../services/api';
+import { useAuth } from '~/contexts/AuthContext';
+import { api } from '~/services/api';
 
 export default function InsuranceDashboard() {
     const router = useRouter();

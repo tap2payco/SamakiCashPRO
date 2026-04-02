@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button, ActivityIndicator, IconButton, Surface } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { api } from '../../../services/api';
-import { useAuth } from '../../../contexts/AuthContext';
+import { api } from '~/services/api';
+import { useAuth } from '~/contexts/AuthContext';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function ExportPassportScreen() {

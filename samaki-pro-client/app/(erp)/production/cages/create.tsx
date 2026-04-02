@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, TextInput, Button, RadioButton, HelperText, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { api } from '../../../services/api';
+import { api } from '~/services/api';
 
 export default function CreateCageScreen() {
     const router = useRouter();

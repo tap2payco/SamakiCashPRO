@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Text, Card, FAB, ActivityIndicator, Searchbar, Chip, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { api } from '../../../services/api';
+import { api } from '~/services/api';
 
 export default function CageListScreen() {
     const router = useRouter();
