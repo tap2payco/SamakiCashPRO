@@ -3,7 +3,7 @@ services:
     name: samakipro-api
     rootDirectory: samaki-pro-backend
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: samaki-pro-backend/Dockerfile
     region: frankfurt # Optional: deploy close to Supabase region
     autoDeploy: true
     envVars:
