@@ -68,9 +68,9 @@ export default function MarketplaceScreen() {
                         buttonColor="#0288D1" 
                         icon="cart-plus" 
                         style={styles.buyBtn}
-                        onPress={() => {}}
+                        onPress={() => router.push(`/commerce/marketplace/${listing.id}` as any)}
                     >
-                        Purchase via Escrow
+                        View Details & Purchase
                     </Button>
                 </View>
             </BlurView>

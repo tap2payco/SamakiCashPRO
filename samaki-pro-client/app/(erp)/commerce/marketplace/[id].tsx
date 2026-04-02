@@ -108,7 +108,7 @@ export default function ListingDetailScreen() {
                             style={styles.buyButton}
                             labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
                             onPress={() => router.push({
-                                pathname: '/checkout',
+                                pathname: '/commerce/checkout' as any,
                                 params: {
                                     listingId: listing.id,
                                     title: listing.title,
