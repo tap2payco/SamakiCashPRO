@@ -63,7 +63,7 @@ export default function FarmerDashboard() {
                                 <Text variant="bodySmall" style={{ color: 'rgba(255,255,255,0.7)' }}>{cage.type.toUpperCase()}</Text>
                             </View>
                         </View>
-                        <IconButton icon="chevron-right" iconColor="white" onPress={() => router.push(`/farmer/cages/${cage.id}` as any)} />
+                        <IconButton icon="chevron-right" iconColor="white" onPress={() => router.push(`/production/cages/${cage.id}` as any)} />
                     </View>
 
                     {batch ? (
@@ -100,7 +100,7 @@ export default function FarmerDashboard() {
                     
                     <Button 
                         mode="contained" 
-                        onPress={() => router.push(`/farmer/cages/${cage.id}` as any)} 
+                        onPress={() => router.push(`/production/cages/${cage.id}` as any)} 
                         style={{ marginTop: 15, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.3)' }}
                     >
                         Manage Cage
@@ -119,7 +119,7 @@ export default function FarmerDashboard() {
                 <View style={styles.header}>
                     <IconButton icon="home" iconColor="white" onPress={() => router.push('/')} />
                     <Text variant="headlineSmall" style={{ fontWeight: 'bold', flex: 1, color: 'white', letterSpacing: 0.5 }}>Farm Telemetry</Text>
-                    <IconButton icon="plus" mode="contained" containerColor="rgba(255,255,255,0.2)" iconColor="white" size={24} onPress={() => router.push('/farmer/cages/create')} />
+                    <IconButton icon="plus" mode="contained" containerColor="rgba(255,255,255,0.2)" iconColor="white" size={24} onPress={() => router.push('/production/cages/create' as any)} />
                 </View>
 
                 {/* Dashboard Stats */}
@@ -169,7 +169,7 @@ export default function FarmerDashboard() {
                             <View style={{ alignItems: 'center', marginTop: 40 }}>
                                 <Avatar.Icon icon="fish-off" size={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} color="white" />
                                 <Text style={{ color: 'rgba(255,255,255,0.7)', marginVertical: 15 }}>No cages detected in your network.</Text>
-                                <Button mode="contained" buttonColor="#0288D1" onPress={() => router.push('/farmer/cages/create')}>Deploy First Cage</Button>
+                                <Button mode="contained" buttonColor="#0288D1" onPress={() => router.push('/production/cages/create' as any)}>Deploy First Cage</Button>
                             </View>
                         ) : (
                             cages.map(renderCageCard)
