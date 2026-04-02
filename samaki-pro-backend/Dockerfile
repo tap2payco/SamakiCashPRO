@@ -23,7 +23,7 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 
 # Generate Prisma Client natively within the container
-RUN bunx prisma generate
+RUN bunx prisma@6 generate
 
 # Environment variables
 ENV NODE_ENV=production
