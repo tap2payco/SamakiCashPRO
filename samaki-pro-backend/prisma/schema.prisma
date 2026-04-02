@@ -32,14 +32,14 @@ enum OrderStatus {
 }
 
 model Profile {
-  id        String   @id @default(uuid())
-  userId    String   @unique // Links to Supabase Auth User ID
-  fullName  String?
-  role      UserRole @default(FARMER)
-  phone     String?  // International format: +255...
-  location  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  phone        String   @unique // International format: +255...
+  passwordHash String
+  fullName     String?
+  role         UserRole @default(FARMER)
+  location     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   listings         Listing[]
   buyerOrders      Order[]           @relation("BuyerOrders")

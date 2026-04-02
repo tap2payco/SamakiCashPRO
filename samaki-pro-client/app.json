@@ -41,6 +41,12 @@
         "projectId": "e9050128-00c7-46bd-a703-5d750f8ae766"
       }
     },
-    "owner": "samakipro"
+    "owner": "samakipro",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e9050128-00c7-46bd-a703-5d750f8ae766"
+    }
   }
 }

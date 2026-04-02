@@ -70,7 +70,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: 'white' },
-    content: { flex: 1, padding: 20, justifyContent: 'center' },
+    content: { flex: 1, padding: 20, justifyContent: 'center', maxWidth: 500, alignSelf: 'center', width: '100%' },
     logo: { width: 100, height: 100, alignSelf: 'center', marginBottom: 20, borderRadius: 50 },
     title: { textAlign: 'center', marginBottom: 30, fontWeight: 'bold', color: '#00609C' },
     input: { marginBottom: 15 },

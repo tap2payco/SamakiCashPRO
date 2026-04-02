@@ -91,7 +91,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flexGrow: 1, padding: 20, justifyContent: 'center', backgroundColor: 'white' },
+    container: { flexGrow: 1, padding: 20, justifyContent: 'center', backgroundColor: 'white', maxWidth: 500, alignSelf: 'center', width: '100%' },
     title: { fontWeight: 'bold', color: '#00609C', textAlign: 'center' },
     subtitle: { textAlign: 'center', marginBottom: 30, color: '#666' },
     input: { marginBottom: 15 },

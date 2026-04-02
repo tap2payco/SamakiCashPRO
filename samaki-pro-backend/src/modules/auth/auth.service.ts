@@ -1,51 +1,38 @@
-import { supabase } from '../../config/supabase'
 import prisma from '../../config/prisma'
 
 export class AuthService {
     async register(data: { phone: string, password: string, fullName: string, role: string }) {
-        // 1. Create Supabase auth user
-        const { data: authData, error } = await supabase.auth.signUp({
-            phone: data.phone,
-            password: data.password
-        })
+        const existing = await prisma.profile.findUnique({ where: { phone: data.phone } })
+        if (existing) throw new Error("Phone number already registered")
+        
+        const passwordHash = await Bun.password.hash(data.password)
 
-        if (error) throw error
-        if (!authData.user) throw new Error('User creation failed')
-
-        // 2. Create profile in our database
-        // Note: In a real production app, this might be better handled by a Supabase Trigger
-        // but explicit creation works for this architecture.
         const profile = await prisma.profile.create({
             data: {
-                userId: authData.user.id,
                 fullName: data.fullName,
                 phone: data.phone,
-                role: data.role
+                role: data.role as any,
+                passwordHash
             }
         })
-
-        return { user: authData.user, profile }
+        return profile
     }
 
     async login(phone: string, password: string) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            phone,
-            password
-        })
-
-        if (error) throw error
-        if (!data.user) throw new Error('Login failed')
-
         const profile = await prisma.profile.findUnique({
-            where: { userId: data.user.id }
+            where: { phone }
         })
+        if (!profile) throw new Error('Invalid phone number or password')
+        
+        const isMatch = await Bun.password.verify(password, profile.passwordHash)
+        if (!isMatch) throw new Error('Invalid phone number or password')
 
-        return { session: data.session, profile }
+        return profile
     }
 
-    async getProfile(userId: string) {
+    async getProfile(id: string) {
         return prisma.profile.findUnique({
-            where: { userId }
+            where: { id }
         })
     }
 }

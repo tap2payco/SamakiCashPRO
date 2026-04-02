@@ -17,8 +17,8 @@ export default function RootLayout() {
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>
-                <Stack>
-                    <Stack.Screen name="index" options={{ title: 'Samaki PRO', headerShown: false }} />
+                <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="index" />
                 </Stack>
             </AuthProvider>
         </PaperProvider>

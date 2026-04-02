@@ -123,7 +123,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F9FA' },
-    scrollContent: { padding: 20 },
+    scrollContent: { padding: 20, maxWidth: 800, alignSelf: 'center', width: '100%' },
     header: { marginBottom: 30, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 30 },
     card: { width: '48%', marginBottom: 15, borderRadius: 16, overflow: 'hidden' },
