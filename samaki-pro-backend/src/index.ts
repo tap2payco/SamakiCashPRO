@@ -34,7 +34,7 @@ const app = new Elysia()
     .use(assetsController)
     .get('/', () => 'Samaki PRO Backend API')
     .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
-    .listen(3000)
+    .listen(parseInt(process.env.PORT || '3000'))
 
 console.log(
     `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`

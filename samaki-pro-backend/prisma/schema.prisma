@@ -3,29 +3,53 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// ... Enums are supported by Prisma client mapping ...
+enum UserRole {
+  FARMER
+  VENDOR
+  ADMIN
+}
+
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+enum OrderStatus {
+  PENDING
+  ESCROW_FUNDED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
 
 model Profile {
   id        String   @id @default(uuid())
   userId    String   @unique // Links to Supabase Auth User ID
   fullName  String?
-  role      String   @default("FARMER") // SQLite doesn't support native enums well in migrations sometimes, but Prisma handles it. 
-  // actually simpler to use String for SQLite to avoid issues, but let's try Enum first.
-  // Prisma recommends String for SQLite if native enums are issues.
-  // But let's stick to Enum and see if Prisma handles it (it usually maps to string).
-  phone     String?
+  role      UserRole @default(FARMER)
+  phone     String?  // International format: +255...
   location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  listings     Listing[]
-  buyerOrders  Order[]   @relation("BuyerOrders")
-  sellerOrders Order[]   @relation("SellerOrders")
-  cages        Cage[]
+  listings         Listing[]
+  buyerOrders      Order[]           @relation("BuyerOrders")
+  sellerOrders     Order[]           @relation("SellerOrders")
+  cages            Cage[]
+  creditScores     CreditScore[]
+  insurancePolicies InsurancePolicy[]
+  exportPassports  ExportPassport[]
+  carbonCredits    CarbonCredit[]
+  coldChainAssets  ColdChainAsset[]
 
   @@map("profiles")
 }
@@ -34,11 +58,11 @@ model Listing {
   id          String        @id @default(uuid())
   title       String
   description String?
-  price       Decimal       // Removed @db.Decimal
+  price       Decimal       @db.Decimal(10, 2)
   quantity    Int
-  unit        String
+  unit        String        // e.g., "kg", "ton"
   imageUrl    String?
-  status      String        @default("AVAILABLE") // Changed to String for SQLite safety
+  status      ListingStatus @default(AVAILABLE)
   sellerId    String
   seller      Profile       @relation(fields: [sellerId], references: [id])
   createdAt   DateTime      @default(now())
@@ -50,22 +74,22 @@ model Listing {
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  buyerId     String
-  buyer       Profile     @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId    String
-  seller      Profile     @relation("SellerOrders", fields: [sellerId], references: [id])
-  listingId   String
-  listing     Listing     @relation(fields: [listingId], references: [id])
-  quantity    Int
-  unitPrice   Decimal     // Removed @db.Decimal
-  totalAmount Decimal     // Removed @db.Decimal
-  escrowId    String?
-  transactionId String?
-  paymentProvider String?
-  status      String      @default("PENDING") // Changed to String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  buyerId         String
+  buyer           Profile     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          Profile     @relation("SellerOrders", fields: [sellerId], references: [id])
+  listingId       String
+  listing         Listing     @relation(fields: [listingId], references: [id])
+  quantity        Int
+  unitPrice       Decimal     @db.Decimal(10, 2)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  escrowId        String?
+  transactionId   String?
+  paymentProvider String?     // MPESA, TIGOPESA
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@map("orders")
 }
@@ -75,9 +99,9 @@ model Escrow {
   orderId       String   @unique
   buyerId       String
   sellerId      String
-  amount        Decimal  // Removed @db.Decimal
+  amount        Decimal  @db.Decimal(10, 2)
   transactionId String?
-  status        String   @default("AWAITING_PAYMENT")
+  status        String   @default("AWAITING_PAYMENT") // AWAITING_PAYMENT, FUNDS_HELD, RELEASED_TO_SELLER, REFUNDED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -96,10 +120,11 @@ model Cage {
   farmerId    String
   farmer      Profile  @relation(fields: [farmerId], references: [id])
   status      String   @default("ACTIVE") // ACTIVE, MAINTENANCE, INACTIVE
-  
+
   batches     Batch[]
   sensors     SensorReading[]
-  
+  insurancePolicy InsurancePolicy?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -107,114 +132,117 @@ model Cage {
 }
 
 model Batch {
-  id          String   @id @default(uuid())
-  cageId      String
-  cage        Cage     @relation(fields: [cageId], references: [id])
-  species     String   // "Tilapia", "Nile Perch"
-  quantity    Int      // Initial stocking quantity
-  currentQuantity Int? // Adjusted for mortality/harvest
-  stockingDate DateTime
+  id                   String   @id @default(uuid())
+  cageId               String
+  cage                 Cage     @relation(fields: [cageId], references: [id])
+  species              String   // "Tilapia", "Nile Perch"
+  quantity             Int      // Initial stocking quantity
+  currentQuantity      Int?     // Adjusted for mortality/harvest
+  stockingDate         DateTime
   estimatedHarvestDate DateTime?
-  status      String   @default("ACTIVE") // ACTIVE, HARVESTED
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status               String   @default("ACTIVE") // ACTIVE, HARVESTED
+
+  exportPassport ExportPassport?
+  carbonCredits  CarbonCredit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("batches")
 }
 
 model SensorReading {
-  id          String   @id @default(uuid())
-  cageId      String
-  cage        Cage     @relation(fields: [cageId], references: [id])
-  temperature Float?
-  ph          Float?
+  id              String   @id @default(uuid())
+  cageId          String
+  cage            Cage     @relation(fields: [cageId], references: [id])
+  temperature     Float?
+  ph              Float?
   dissolvedOxygen Float?
-  turbidity   Float?
-  ammonia     Float?
-  timestamp   DateTime @default(now())
+  turbidity       Float?
+  ammonia         Float?
+  timestamp       DateTime @default(now())
 
   @@map("sensor_readings")
 }
 
 // ------------------------------------------------------
-// Phase 3 Additions: AIoT & Fintech Advanced Modules
+// Phase 3: AIoT & Fintech Advanced Modules
 // ------------------------------------------------------
 
 model CreditScore {
-    id          String   @id @default(uuid())
-    farmerId    String   @unique
-    farmer      Profile  @relation(fields: [farmerId], references: [id])
-    score       Int      // 0 - 1000
-    riskLevel   String   // LOW, MEDIUM, HIGH
-    loanLimit   Decimal
-    lastUpdated DateTime @default(now())
-    history     String?  // JSON string storing calculation metrics
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid())
+  farmerId    String   @unique
+  farmer      Profile  @relation(fields: [farmerId], references: [id])
+  score       Int      // 0 - 1000
+  riskLevel   String   // LOW, MEDIUM, HIGH
+  loanLimit   Decimal  @db.Decimal(12, 2)
+  lastUpdated DateTime @default(now())
+  history     String?  // JSON string storing calculation metrics
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-    @@map("credit_scores")
+  @@map("credit_scores")
 }
 
 model InsurancePolicy {
-    id            String   @id @default(uuid())
-    cageId        String   @unique
-    cage          Cage     @relation(fields: [cageId], references: [id])
-    farmerId      String
-    farmer        Profile  @relation(fields: [farmerId], references: [id])
-    premiumAmount Decimal
-    coverageLimit Decimal
-    status        String   @default("ACTIVE") // ACTIVE, TRIGGERED, PAID_OUT, CANCELLED
-    triggerData   String?  // JSON string storing the sensor data that triggered it
-    startDate     DateTime @default(now())
-    endDate       DateTime
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+  id            String   @id @default(uuid())
+  cageId        String   @unique
+  cage          Cage     @relation(fields: [cageId], references: [id])
+  farmerId      String
+  farmer        Profile  @relation(fields: [farmerId], references: [id])
+  premiumAmount Decimal  @db.Decimal(10, 2)
+  coverageLimit Decimal  @db.Decimal(12, 2)
+  status        String   @default("ACTIVE") // ACTIVE, TRIGGERED, PAID_OUT, CANCELLED
+  triggerData   String?  // JSON string storing the sensor data that triggered it
+  startDate     DateTime @default(now())
+  endDate       DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-    @@map("insurance_policies")
+  @@map("insurance_policies")
 }
 
 // ------------------------------------------------------
-// Phase 4 Additions: Traceability, Blue Carbon, Assets
+// Phase 4: Traceability, Blue Carbon, Assets
 // ------------------------------------------------------
 
 model ExportPassport {
-    id            String   @id @default(uuid())
-    batchId       String   @unique
-    batch         Batch    @relation(fields: [batchId], references: [id])
-    farmerId      String
-    farmer        Profile  @relation(fields: [farmerId], references: [id])
-    hashData      String   // Mock cryptographic hash
-    waterQuality  String   // 'Pass', 'Fail'
-    issueDate     DateTime @default(now())
+  id           String   @id @default(uuid())
+  batchId      String   @unique
+  batch        Batch    @relation(fields: [batchId], references: [id])
+  farmerId     String
+  farmer       Profile  @relation(fields: [farmerId], references: [id])
+  hashData     String   // Mock cryptographic hash
+  waterQuality String   // 'Pass', 'Fail'
+  issueDate    DateTime @default(now())
 
-    @@map("export_passports")
+  @@map("export_passports")
 }
 
 model CarbonCredit {
-    id            String   @id @default(uuid())
-    farmerId      String   
-    farmer        Profile  @relation(fields: [farmerId], references: [id])
-    batchId       String
-    batch         Batch    @relation(fields: [batchId], references: [id])
-    tokensEarned  Decimal  // Mock carbon tokens based on biomass
-    status        String   @default("AVAILABLE") // AVAILABLE, SOLD
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+  id           String  @id @default(uuid())
+  farmerId     String
+  farmer       Profile @relation(fields: [farmerId], references: [id])
+  batchId      String
+  batch        Batch   @relation(fields: [batchId], references: [id])
+  tokensEarned Decimal @db.Decimal(10, 4) // Mock carbon tokens based on biomass
+  status       String  @default("AVAILABLE") // AVAILABLE, SOLD
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-    @@map("carbon_credits")
+  @@map("carbon_credits")
 }
 
 model ColdChainAsset {
-    id            String   @id @default(uuid())
-    vendorId      String
-    vendor        Profile  @relation(fields: [vendorId], references: [id])
-    assetType     String   // e.g., 'Solar Cooler 50L'
-    totalCost     Decimal
-    amountPaid    Decimal  @default(0)
-    status        String   @default("LEASING") // LEASING, OWNED, DEFAULTED
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+  id         String  @id @default(uuid())
+  vendorId   String
+  vendor     Profile @relation(fields: [vendorId], references: [id])
+  assetType  String  // e.g., 'Solar Cooler 50L'
+  totalCost  Decimal @db.Decimal(10, 2)
+  amountPaid Decimal @default(0) @db.Decimal(10, 2)
+  status     String  @default("LEASING") // LEASING, OWNED, DEFAULTED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-    @@map("cold_chain_assets")
+  @@map("cold_chain_assets")
 }

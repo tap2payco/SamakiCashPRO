@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: samakipro-api
+    rootDirectory: samaki-pro-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt # Optional: deploy close to Supabase region
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
