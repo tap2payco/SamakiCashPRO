@@ -1,52 +1,5 @@
 {
-  "expo": {
-    "name": "Samaki PRO",
-    "slug": "samakipro",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "scheme": "samakipro",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#00609C"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.samakipro.app"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#00609C"
-      },
-      "package": "com.samakipro.app",
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "experiments": {
-      "tsconfigPaths": true
-    },
-    "plugins": [
-      "expo-router"
-    ],
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "e9050128-00c7-46bd-a703-5d750f8ae766"
-      }
-    },
-    "owner": "samakipro",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/e9050128-00c7-46bd-a703-5d750f8ae766"
-    }
-  }
+  "plugins": [
+    "expo-font"
+  ]
 }

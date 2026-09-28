@@ -34,7 +34,7 @@ export default function VendorDashboard() {
 
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
         try {
-            await api.post(`/orders/${orderId}/status`, { status: newStatus }, { method: 'PATCH' });
+            await api.post(`/orders/${orderId}/status`, { status: newStatus });
             fetchOrders(); 
         } catch (err) {
             console.error('Failed to update status', err);

@@ -58,19 +58,19 @@ export default function VendorAssetsScreen() {
         <View style={{ flex: 1 }}>
             <View style={styles.header}>
                 <IconButton icon="arrow-left" iconColor="white" onPress={() => router.back()} />
-                <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: 'white', flex: 1 }}>Cold Chain Asset Financing</Text>
+                <Text variant="headlineSmall" style={{ fontWeight: '900', color: 'white', flex: 1, letterSpacing: 1 }}>Cold Chain Assets</Text>
             </View>
 
             <ScrollView 
                 contentContainerStyle={styles.container} 
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchAssets(); }} tintColor="white" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchAssets(); }} tintColor="#00E5FF" />}
             >
-                <BlurView intensity={20} tint="light" style={styles.introBox}>
+                <BlurView intensity={30} tint="dark" style={styles.introBox}>
                     <View style={styles.cardPad}>
-                        <Text variant="bodyLarge" style={{ color: 'white', marginBottom: 15, lineHeight: 22 }}>
+                        <Text variant="bodyLarge" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 20, lineHeight: 24 }}>
                             Reduce post-harvest loss with Solar-Powered Cold Storage. Apply for Pay-As-You-Go (PAYG) financing with 0% interest directly integrated with your Escrow payouts.
                         </Text>
-                        <Button mode="contained" icon="solar-panel-large" onPress={() => setApplyModal(true)} buttonColor="#00E676" labelStyle={{ fontWeight: 'bold' }} style={{ borderRadius: 16 }}>
+                        <Button mode="contained" icon="solar-panel-large" onPress={() => setApplyModal(true)} buttonColor="#00E5FF" textColor="#0F2027" labelStyle={{ fontWeight: 'bold' }} style={{ borderRadius: 50, paddingVertical: 6 }}>
                             Request Solar Cooler
                         </Button>
                     </View>
@@ -89,47 +89,47 @@ export default function VendorAssetsScreen() {
                     assets.map((asset: any) => {
                         const progress = Number(asset.amountPaid) / Number(asset.totalCost);
                         return (
-                            <BlurView intensity={25} tint="light" style={styles.assetCard} key={asset.id}>
+                            <BlurView intensity={30} tint="dark" style={styles.assetCard} key={asset.id}>
                                 <View style={styles.cardPad}>
                                     <View style={styles.row}>
                                         <View>
-                                            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'white' }}>{asset.assetType}</Text>
-                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                                                Activated on {new Date(asset.createdAt).toLocaleDateString()}
+                                            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: 'white' }}>{asset.assetType}</Text>
+                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.5)', marginTop: 4, letterSpacing: 1 }}>
+                                                ACTIVATED ON {new Date(asset.createdAt).toLocaleDateString()}
                                             </Text>
                                         </View>
-                                        <View style={[styles.statusBadge, asset.status === 'OWNED' && { backgroundColor: 'rgba(0, 230, 118, 0.2)' }]}>
-                                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: asset.status === 'OWNED' ? '#00E676' : '#FFB74D' }}>
+                                        <View style={[styles.statusBadge, asset.status === 'OWNED' && { backgroundColor: 'rgba(0, 230, 118, 0.2)', borderColor: '#00E676' }]}>
+                                            <Text style={{ fontSize: 10, fontWeight: 'bold', letterSpacing: 1, color: asset.status === 'OWNED' ? '#00E676' : '#FFB74D' }}>
                                                 {asset.status}
                                             </Text>
                                         </View>
                                     </View>
 
-                                    <Divider style={{ marginVertical: 15, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+                                    <Divider style={{ marginVertical: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
 
                                     <View style={styles.row}>
                                         <View>
-                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.7)' }}>Paid via Auto-Deduct</Text>
-                                            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'white' }}>
+                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Paid via Auto-Deduct</Text>
+                                            <Text variant="headlineSmall" style={{ fontWeight: '900', color: '#00E5FF' }}>
                                                 {Number(asset.amountPaid).toLocaleString()} TZS
                                             </Text>
                                         </View>
                                         <View style={{ alignItems: 'flex-end' }}>
-                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.7)' }}>Total Lease Cost</Text>
-                                            <Text variant="titleMedium" style={{ color: '#E0E0E0' }}>
+                                            <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Total Lease Cost</Text>
+                                            <Text variant="titleMedium" style={{ color: 'rgba(255,255,255,0.7)' }}>
                                                 {Number(asset.totalCost).toLocaleString()} TZS
                                             </Text>
                                         </View>
                                     </View>
 
-                                    <View style={{ marginTop: 20 }}>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                            <Text variant="labelMedium" style={{ color: 'white', fontWeight: 'bold' }}>Lease to Own Progress</Text>
-                                            <Text variant="labelMedium" style={{ fontWeight: 'bold', color: '#00E676' }}>
+                                    <View style={{ marginTop: 25 }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                                            <Text variant="labelMedium" style={{ color: 'white', fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Lease to Own Progress</Text>
+                                            <Text variant="labelMedium" style={{ fontWeight: 'bold', color: '#00E5FF' }}>
                                                 {(progress * 100).toFixed(1)}%
                                             </Text>
                                         </View>
-                                        <ProgressBar progress={progress} color={asset.status === 'OWNED' ? '#00E676' : '#4FC3F7'} style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+                                        <ProgressBar progress={progress} color={asset.status === 'OWNED' ? '#00E676' : '#00E5FF'} style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.1)' }} />
                                     </View>
                                 </View>
                             </BlurView>
@@ -138,7 +138,7 @@ export default function VendorAssetsScreen() {
                 )}
 
                 <Portal>
-                    <Dialog visible={applyModal} onDismiss={() => setApplyModal(false)} style={{ backgroundColor: 'rgba(30, 40, 60, 0.95)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+                    <Dialog visible={applyModal} onDismiss={() => setApplyModal(false)} style={{ backgroundColor: 'rgba(15, 32, 39, 0.95)', borderRadius: 30, borderWidth: 1, borderColor: 'rgba(0, 229, 255, 0.3)' }}>
                         <Dialog.Title style={{ color: 'white', fontWeight: 'bold' }}>Apply for Financing</Dialog.Title>
                         <Dialog.Content>
                             <Text style={{ marginBottom: 20, color: 'rgba(255,255,255,0.8)', lineHeight: 20 }}>
@@ -162,12 +162,12 @@ export default function VendorAssetsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { padding: 20, paddingBottom: 50 },
-    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: 'rgba(0,0,0,0.2)' },
-    introBox: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', marginBottom: 25 },
-    cardPad: { padding: 25 },
-    sectionTitle: { fontWeight: 'bold', marginBottom: 20, color: 'white', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-    assetCard: { marginBottom: 20, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    container: { padding: 25, paddingBottom: 50 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+    introBox: { borderRadius: 30, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 229, 255, 0.2)', marginBottom: 35 },
+    cardPad: { padding: 30 },
+    sectionTitle: { fontWeight: '900', marginBottom: 25, color: 'white', letterSpacing: 1, textTransform: 'uppercase' },
+    assetCard: { marginBottom: 25, borderRadius: 30, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 229, 255, 0.2)', elevation: 10, shadowColor: '#00E5FF', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 15 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    statusBadge: { backgroundColor: 'rgba(255,183,77,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }
+    statusBadge: { backgroundColor: 'rgba(255,183,77,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,183,77,0.3)' }
 });

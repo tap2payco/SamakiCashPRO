@@ -1,35 +1,50 @@
 import { View, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Stack } from 'expo-router';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
-import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
+import { 
+    useFonts,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black 
+} from '@expo-google-fonts/inter';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import { ThemeProvider, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { AuthProvider } from '~/contexts/AuthContext';
 import GradientBackground from '~/components/GradientBackground';
-
-// Define custom theme
-const theme = {
-    ...MD3LightTheme,
-    colors: {
-        ...MD3LightTheme.colors,
-        primary: '#0288D1', 
-        secondary: '#00E676', 
-        tertiary: '#FFA600',
-        background: 'transparent',
-        surface: 'transparent',
-        elevation: { level0: 'transparent', level1: 'transparent', level2: 'transparent', level3: 'transparent', level4: 'transparent', level5: 'transparent' } as any
-    },
-};
+import { CleanEnterpriseTheme } from '~/theme';
 
 const navTheme = {
-    ...DefaultTheme,
+    ...NavigationLightTheme,
     colors: {
-        ...DefaultTheme.colors,
+        ...NavigationLightTheme.colors,
         background: 'transparent',
     },
 };
 
 export default function RootLayout() {
+    const [fontsLoaded] = useFonts({
+        Inter_400Regular,
+        Inter_500Medium,
+        Inter_600SemiBold,
+        Inter_700Bold,
+        Inter_800ExtraBold,
+        Inter_900Black,
+    });
+
+    useEffect(() => {
+        if (fontsLoaded) {
+            SplashScreen.hideAsync();
+        }
+    }, [fontsLoaded]);
+
+    if (!fontsLoaded) return null;
+
     return (
-        <PaperProvider theme={theme}>
+        <PaperProvider theme={CleanEnterpriseTheme}>
             <ThemeProvider value={navTheme}>
                 <AuthProvider>
                     <GradientBackground>

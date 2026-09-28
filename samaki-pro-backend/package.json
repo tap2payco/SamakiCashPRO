@@ -9,7 +9,8 @@
     "seed": "bun run seed.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "prisma": "6"
   },
   "peerDependencies": {
     "typescript": "^5"

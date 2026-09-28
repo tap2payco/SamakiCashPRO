@@ -13,12 +13,13 @@ async function main() {
     let farmer;
     try {
         farmer = await prisma.profile.upsert({
-            where: { userId: farmerId },
+            where: { phone: '+255700000001' },
             update: {},
             create: {
-                userId: farmerId,
+                id: farmerId,
                 fullName: 'Juma K',
                 phone: '+255700000001',
+                passwordHash: 'dummy_hash',
                 role: 'FARMER',
                 location: 'Mwanza, Kirumba'
             }
@@ -61,11 +62,12 @@ async function main() {
         }
     ]
 
+    const createdListings = []
     for (const l of listings) {
-        await prisma.listing.create({ data: l })
+        createdListings.push(await prisma.listing.create({ data: l }))
     }
 
-    console.log(`📦 Seeded ${listings.length} listings`)
+    console.log(`📦 Seeded ${createdListings.length} listings`)
 
     // 3. Create Sample Cages
     const cage1 = await prisma.cage.create({
@@ -158,6 +160,58 @@ async function main() {
     }
 
     console.log('📊 Seeded sensor readings')
+
+    // 6. Orders (Escrow Ledger)
+    console.log('🚚 Seeding Orders & Escrow...')
+    const order = await prisma.order.create({
+        data: {
+            buyerId: farmer.id,
+            sellerId: farmer.id,
+            listingId: createdListings[0]!.id,
+            quantity: 50,
+            unitPrice: 12000,
+            totalAmount: 600000,
+            status: 'DELIVERED',
+            paymentProvider: 'ESCROW'
+        }
+    })
+
+    await prisma.escrow.create({
+        data: {
+            orderId: order.id,
+            buyerId: farmer.id,
+            sellerId: farmer.id,
+            amount: 600000,
+            status: 'FUNDS_HELD'
+        }
+    })
+
+    // 7. Insurance Policies
+    console.log('🛡️ Seeding Insurance...')
+    await prisma.insurancePolicy.create({
+        data: {
+            cageId: cage1.id,
+            farmerId: farmer.id,
+            premiumAmount: 150000,
+            coverageLimit: 5000000,
+            status: 'ACTIVE',
+            startDate: new Date('2025-01-01'),
+            endDate: new Date('2026-01-01')
+        }
+    })
+
+    // 8. Cold Chain Assets
+    console.log('🧊 Seeding Assets...')
+    await prisma.coldChainAsset.create({
+        data: {
+            vendorId: farmer.id,
+            assetType: 'Solar Cooler 50L',
+            totalCost: 850000,
+            amountPaid: 450000,
+            status: 'LEASING'
+        }
+    })
+
     console.log('✅ Seeding complete')
 }
 

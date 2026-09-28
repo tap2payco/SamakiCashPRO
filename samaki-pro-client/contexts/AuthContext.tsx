@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(true);
         try {
             const response = await api.post('/auth/login', { phone, password });
-            const userData = { ...response.profile, session: response.session };
+            const userData = { ...response.profile, token: response.token, session: response.session };
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
             router.replace('/');
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(true);
         try {
             const response = await api.post('/auth/register', data);
-            const userData = { ...response.profile, session: { user: response.user } };
+            const userData = { ...response.profile, token: response.token, session: response.session };
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
             router.replace('/');

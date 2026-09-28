@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, Animated } from 'react-native';
 import { Text, TextInput, Button, RadioButton, IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '~/contexts/AuthContext';
@@ -16,6 +16,25 @@ export default function RegisterScreen() {
     const [role, setRole] = useState('FARMER');
     const [error, setError] = useState('');
 
+    // Entry Animations
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(20)).current;
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                useNativeDriver: true,
+            })
+        ]).start();
+    }, [fadeAnim, slideAnim]);
+
     const handleRegister = async () => {
         if (!phone || !password || !fullName) {
             setError('Please fill in all fields');
@@ -23,12 +42,7 @@ export default function RegisterScreen() {
         }
         setError('');
         try {
-            await register({
-                phone,
-                password,
-                fullName,
-                role
-            });
+            await register({ phone, password, fullName, role });
         } catch (err: any) {
             setError(err.message || 'Registration failed. Try again.');
         }
@@ -42,54 +56,60 @@ export default function RegisterScreen() {
                     style={styles.container}
                 >
                     <ScrollView contentContainerStyle={styles.scrollContent}>
-                        <IconButton icon="arrow-left" iconColor="white" style={styles.backBtn} onPress={() => router.back()} />
+                        <IconButton icon="arrow-left" iconColor="#0B2027" style={styles.backBtn} onPress={() => router.back()} />
 
-                        <View style={styles.glassWrapper}>
-                            <BlurView intensity={25} tint="light" style={styles.glassCard}>
+                        <Animated.View style={[styles.glassWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                            <BlurView intensity={70} tint="light" style={styles.glassCard}>
                                 <View style={styles.contentPad}>
                                     <Text variant="headlineMedium" style={styles.title}>Create Account</Text>
-                                    <Text variant="bodyMedium" style={styles.subtitle}>Join the Samaki PRO Ecosystem</Text>
+                                    <Text variant="bodyMedium" style={styles.subtitle}>Join the Samaki<Text style={styles.proAccent}>PRO</Text> Ecosystem</Text>
 
                                     <TextInput
                                         label="Full Name"
                                         value={fullName}
                                         onChangeText={setFullName}
-                                        mode="flat"
+                                        mode="outlined"
                                         style={styles.input}
-                                        underlineColor="transparent"
-                                        activeUnderlineColor="#003366"
-                                        left={<TextInput.Icon icon="account" color="#003366" />}
+                                        textColor="#0B2027"
+                                        outlineColor="rgba(0,0,0,0.2)"
+                                        activeOutlineColor="#00B4D8"
+                                        left={<TextInput.Icon icon="account" color="rgba(0,0,0,0.5)" />}
+                                        theme={{ colors: { background: 'transparent', onSurfaceVariant: 'rgba(0,0,0,0.5)' } }}
                                     />
 
                                     <TextInput
                                         label="Phone Number"
                                         value={phone}
                                         onChangeText={setPhone}
-                                        mode="flat"
+                                        mode="outlined"
                                         keyboardType="phone-pad"
                                         style={styles.input}
-                                        underlineColor="transparent"
-                                        activeUnderlineColor="#003366"
-                                        left={<TextInput.Icon icon="phone" color="#003366" />}
+                                        textColor="#0B2027"
+                                        outlineColor="rgba(0,0,0,0.2)"
+                                        activeOutlineColor="#00B4D8"
+                                        left={<TextInput.Icon icon="phone" color="rgba(0,0,0,0.5)" />}
+                                        theme={{ colors: { background: 'transparent', onSurfaceVariant: 'rgba(0,0,0,0.5)' } }}
                                     />
 
                                     <TextInput
                                         label="Password"
                                         value={password}
                                         onChangeText={setPassword}
-                                        mode="flat"
+                                        mode="outlined"
                                         secureTextEntry
                                         style={styles.input}
-                                        underlineColor="transparent"
-                                        activeUnderlineColor="#003366"
-                                        left={<TextInput.Icon icon="lock" color="#003366" />}
+                                        textColor="#0B2027"
+                                        outlineColor="rgba(0,0,0,0.2)"
+                                        activeOutlineColor="#00B4D8"
+                                        left={<TextInput.Icon icon="lock" color="rgba(0,0,0,0.5)" />}
+                                        theme={{ colors: { background: 'transparent', onSurfaceVariant: 'rgba(0,0,0,0.5)' } }}
                                     />
 
                                     <Text variant="labelMedium" style={styles.roleLabel}>I am registering as a:</Text>
                                     <RadioButton.Group onValueChange={newValue => setRole(newValue)} value={role}>
                                         <View style={styles.radioGroup}>
-                                            <RadioButton.Item label="Farmer" value="FARMER" labelStyle={{ color: 'white' }} uncheckedColor="rgba(255,255,255,0.5)" color="#64B5F6" />
-                                            <RadioButton.Item label="Buyer / Vendor" value="VENDOR" labelStyle={{ color: 'white' }} uncheckedColor="rgba(255,255,255,0.5)" color="#64B5F6" />
+                                            <RadioButton.Item label="Farmer" value="FARMER" labelStyle={{ color: '#0B2027' }} uncheckedColor="rgba(0,0,0,0.4)" color="#00B4D8" />
+                                            <RadioButton.Item label="Vendor" value="VENDOR" labelStyle={{ color: '#0B2027' }} uncheckedColor="rgba(0,0,0,0.4)" color="#00B4D8" />
                                         </View>
                                     </RadioButton.Group>
 
@@ -101,21 +121,22 @@ export default function RegisterScreen() {
                                         loading={isLoading}
                                         disabled={isLoading}
                                         style={styles.button}
-                                        labelStyle={{ letterSpacing: 1, fontWeight: 'bold' }}
-                                        buttonColor="#0288D1"
+                                        labelStyle={styles.btnLabel}
+                                        buttonColor="#00B4D8"
+                                        textColor="#FFFFFF"
                                     >
                                         Register 
                                     </Button>
 
                                     <View style={styles.footerRow}>
-                                        <Text style={{ color: 'rgba(255,255,255,0.8)' }}>Already have an account?</Text>
-                                        <Button mode="text" onPress={() => router.replace('/auth/login')} compact textColor="#64B5F6">
+                                        <Text style={{ color: 'rgba(0,0,0,0.5)' }}>Already have an account?</Text>
+                                        <Button mode="text" onPress={() => router.replace('/auth/login')} compact textColor="#00B4D8" labelStyle={{ fontWeight: 'bold' }}>
                                             Login
                                         </Button>
                                     </View>
                                 </View>
                             </BlurView>
-                        </View>
+                        </Animated.View>
                     </ScrollView>
                 </KeyboardAvoidingView>
             </SafeAreaView>
@@ -127,15 +148,30 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollContent: { flexGrow: 1, padding: 20, justifyContent: 'center' },
     backBtn: { position: 'absolute', top: 10, left: 10, zIndex: 10 },
-    glassWrapper: { maxWidth: 500, alignSelf: 'center', width: '100%', borderRadius: 24, overflow: 'hidden' },
-    glassCard: { backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    contentPad: { padding: 30 },
-    title: { textAlign: 'center', fontWeight: 'bold', color: '#FFFFFF' },
-    subtitle: { textAlign: 'center', marginBottom: 25, color: '#B3E5FC' },
-    input: { marginBottom: 15, backgroundColor: 'rgba(255,255,255,0.8)', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' },
-    roleLabel: { color: 'white', marginTop: 10, marginBottom: 5 },
-    radioGroup: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, paddingVertical: 5 },
-    button: { marginTop: 10, paddingVertical: 6, borderRadius: 12 },
-    error: { color: '#ff5252', textAlign: 'center', marginBottom: 15, backgroundColor: 'rgba(0,0,0,0.5)', padding: 5, borderRadius: 5, overflow: 'hidden' },
-    footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 }
+    glassWrapper: { 
+        maxWidth: 500, 
+        alignSelf: 'center', 
+        width: '100%', 
+        borderRadius: 30, 
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.05)',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+    },
+    glassCard: { backgroundColor: 'rgba(255, 255, 255, 0.75)' },
+    contentPad: { padding: 40 },
+    title: { textAlign: 'center', fontWeight: 'bold', color: '#0B2027' },
+    proAccent: { color: '#00B4D8' },
+    subtitle: { textAlign: 'center', marginBottom: 30, color: '#495057' },
+    input: { marginBottom: 15, fontSize: 16 },
+    roleLabel: { color: '#495057', marginTop: 10, marginBottom: 10 },
+    radioGroup: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: 12, paddingVertical: 5 },
+    button: { marginTop: 15, paddingVertical: 8, borderRadius: 50 },
+    btnLabel: { letterSpacing: 1, fontWeight: 'bold', fontSize: 16 },
+    error: { color: '#FF5252', textAlign: 'center', marginBottom: 15, backgroundColor: 'rgba(255, 82, 82, 0.1)', padding: 10, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#FF5252' },
+    footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 25 }
 });

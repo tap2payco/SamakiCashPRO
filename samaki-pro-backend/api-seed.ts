@@ -18,7 +18,7 @@ async function seed() {
 
     let farmerData;
     if (farmerRes.ok) {
-        const body = await farmerRes.json();
+        const body = (await farmerRes.json()) as any;
         farmerData = body.profile || body; // Handle structure
         console.log('✅ Farmer created:', farmerData.id);
     } else {
@@ -36,7 +36,7 @@ async function seed() {
             console.error('❌ Login failed:', await loginRes.text());
             process.exit(1);
         }
-        const body = await loginRes.json();
+        const body = (await loginRes.json()) as any;
         farmerData = body.profile;
         console.log('✅ Logged in as:', farmerData.id);
     }
@@ -69,7 +69,7 @@ async function seed() {
         });
 
         if (res.ok) {
-            const data = await res.json();
+            const data = (await res.json()) as any;
             console.log(`📦 Created listing: ${data.title}`);
         } else {
             console.error('❌ Failed to create listing:', await res.text());

@@ -35,19 +35,9 @@ export const marketplaceController = new Elysia({ prefix: '/marketplace' })
             return { error: 'Unauthorized' }
         }
 
-        // Look up the Profile ID using the Auth User ID
-        const profile = await prisma.profile.findUnique({
-            where: { userId: user.id }
-        })
-
-        if (!profile) {
-            set.status = 400
-            return { error: 'User profile not found. Please complete registration.' }
-        }
-
         return await service.createListing({
             ...body,
-            sellerId: profile.id
+            sellerId: user.id
         })
     }, {
         body: 'createListing'

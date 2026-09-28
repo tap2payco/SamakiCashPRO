@@ -41,8 +41,12 @@ export class MarketplaceService {
         })
     }
 
-    // ... (rest of methods)
-
+    async getListingById(id: string) {
+        return prisma.listing.findUnique({
+            where: { id },
+            include: { seller: true }
+        })
+    }
     // Update listing status
     async updateListingStatus(id: string, status: string) { // Changed type
         return prisma.listing.update({

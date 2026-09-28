@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Animated, Easing } from 'react-native';
 import { Text, Button, Avatar, ActivityIndicator, IconButton, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { api } from '~/services/api';
@@ -13,8 +13,18 @@ export default function FarmerDashboard() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    // AI Animation Pulse
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
     useEffect(() => {
         if (user) fetchCages();
+
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, { toValue: 1.5, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
+            ])
+        ).start();
     }, [user]);
 
     const fetchCages = async () => {
@@ -34,13 +44,44 @@ export default function FarmerDashboard() {
         fetchCages();
     };
 
-    // Derived Stats
-    const totalFish = cages.reduce((sum, cage) => {
-        const activeBatch = cage.batches?.[0]; // Assuming recent batch
-        return sum + (activeBatch?.currentQuantity || 0);
-    }, 0);
-
+    const totalFish = cages.reduce((sum, cage) => sum + (cage.batches?.[0]?.currentQuantity || 0), 0);
     const cagesInUse = cages.filter(c => c.batches?.length > 0 && c.batches[0].status === 'ACTIVE').length;
+
+    const renderAICard = () => {
+        // Mock AI logic based on data
+        let aiMessage = "System nominal. All telemetry parameters are within optimal ranges.";
+        let aiColor = "#00E676"; // Emerald
+
+        const cageWithHighTemp = cages.find(c => c.sensors?.[0]?.temperature > 28);
+        if (cageWithHighTemp) {
+            aiMessage = `ALERT: High temperature (${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C) detected in ${cageWithHighTemp.name}. Recommend activating aeration.`;
+            aiColor = "#FF9100"; // Amber
+        }
+
+        return (
+            <BlurView intensity={40} tint="dark" style={styles.aiCard}>
+                <View style={styles.cardPad}>
+                    <View style={styles.row}>
+                        <View style={styles.aiHeader}>
+                            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                                <Avatar.Icon icon="brain" size={32} style={{ backgroundColor: 'rgba(0,0,0,0.3)' }} color={aiColor} />
+                            </Animated.View>
+                            <Text variant="titleMedium" style={styles.aiTitle}>Samaki AI Engine</Text>
+                        </View>
+                        <Text style={{ color: aiColor, fontWeight: 'bold' }}>LIVE</Text>
+                    </View>
+                    <Text variant="bodyMedium" style={{ color: 'rgba(255,255,255,0.8)', marginTop: 15, lineHeight: 22 }}>
+                        {aiMessage}
+                    </Text>
+                    {cageWithHighTemp && (
+                        <Button mode="contained" buttonColor={aiColor} textColor="#0F2027" style={{ marginTop: 15, borderRadius: 50 }}>
+                            Auto-Adjust Aeration
+                        </Button>
+                    )}
+                </View>
+            </BlurView>
+        );
+    };
 
     const renderCageCard = (cage: any) => {
         const batch = cage.batches?.[0];
@@ -48,19 +89,19 @@ export default function FarmerDashboard() {
         const isActive = !!batch;
 
         return (
-            <BlurView intensity={25} tint="light" style={styles.cageCard} key={cage.id}>
+            <BlurView intensity={30} tint="dark" style={styles.cageCard} key={cage.id}>
                 <View style={styles.cardPad}>
                     <View style={styles.row}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Avatar.Icon 
                                 icon="grid" 
                                 size={44} 
-                                style={{ backgroundColor: isActive ? 'rgba(0,230,118,0.2)' : 'rgba(255,255,255,0.2)' }} 
-                                color={isActive ? '#00E676' : '#FFFFFF'} 
+                                style={{ backgroundColor: isActive ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.1)' }} 
+                                color={isActive ? '#00E5FF' : 'rgba(255,255,255,0.4)'} 
                             />
                             <View style={{ marginLeft: 15 }}>
                                 <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'white' }}>{cage.name}</Text>
-                                <Text variant="bodySmall" style={{ color: 'rgba(255,255,255,0.7)' }}>{cage.type.toUpperCase()}</Text>
+                                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{cage.type.toUpperCase()}</Text>
                             </View>
                         </View>
                         <IconButton icon="chevron-right" iconColor="white" onPress={() => router.push(`/production/cages/${cage.id}` as any)} />
@@ -69,42 +110,36 @@ export default function FarmerDashboard() {
                     {batch ? (
                         <View style={{ marginTop: 20 }}>
                             <View style={styles.row}>
-                                <Text variant="bodyMedium" style={{ color: 'white' }}>Stock: <Text style={{ fontWeight: 'bold' }}>{batch.species}</Text></Text>
-                                <Text variant="bodyMedium" style={{ fontWeight: 'bold', color: '#00E676' }}>{batch.currentQuantity} pcs</Text>
+                                <Text variant="bodyMedium" style={{ color: 'rgba(255,255,255,0.7)' }}>Stock: <Text style={{ color: 'white', fontWeight: 'bold' }}>{batch.species}</Text></Text>
+                                <Text variant="bodyMedium" style={{ fontWeight: 'bold', color: '#00E5FF' }}>{batch.currentQuantity} pcs</Text>
                             </View>
-                            <ProgressBar progress={batch.currentQuantity / cage.capacity} color="#00E676" style={{ marginTop: 8, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                            <Text variant="caption" style={{ marginTop: 5, color: 'rgba(255,255,255,0.6)' }}>Est. Harvest: {batch.estimatedHarvestDate ? new Date(batch.estimatedHarvestDate).toLocaleDateString() : 'N/A'}</Text>
+                            <ProgressBar progress={batch.currentQuantity / cage.capacity} color="#00E5FF" style={{ marginTop: 10, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                            <Text variant="labelSmall" style={{ marginTop: 8, color: 'rgba(255,255,255,0.5)' }}>Est. Harvest: {batch.estimatedHarvestDate ? new Date(batch.estimatedHarvestDate).toLocaleDateString() : 'N/A'}</Text>
                         </View>
                     ) : (
-                        <View style={{ marginTop: 20, padding: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8 }}>
-                            <Text style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>Cage Empty - Ready for Stocking</Text>
+                        <View style={{ marginTop: 20, padding: 15, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
+                            <Text style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>Awaiting Stock Deployment</Text>
                         </View>
                     )}
 
                     {sensor && (
                         <View style={styles.sensorRow}>
                             <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.6)' }}>Temp</Text>
-                                <Text variant="bodySmall" style={{ fontWeight: 'bold', color: '#FFB74D' }}>{sensor.temperature}°C</Text>
+                                <Text variant="labelSmall" style={styles.sensorLabel}>TEMP</Text>
+                                <Text variant="titleMedium" style={[styles.sensorValue, { color: sensor.temperature > 28 ? '#FF9100' : '#00E676' }]}>{sensor.temperature.toFixed(1)}°</Text>
                             </View>
+                            <View style={styles.sensorDivider} />
                             <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.6)' }}>pH</Text>
-                                <Text variant="bodySmall" style={{ fontWeight: 'bold', color: '#81C784' }}>{sensor.ph}</Text>
+                                <Text variant="labelSmall" style={styles.sensorLabel}>pH</Text>
+                                <Text variant="titleMedium" style={[styles.sensorValue, { color: '#00E5FF' }]}>{sensor.ph.toFixed(1)}</Text>
                             </View>
+                            <View style={styles.sensorDivider} />
                             <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.6)' }}>DO</Text>
-                                <Text variant="bodySmall" style={{ fontWeight: 'bold', color: '#4FC3F7' }}>{sensor.dissolvedOxygen} mg/L</Text>
+                                <Text variant="labelSmall" style={styles.sensorLabel}>OXYGEN</Text>
+                                <Text variant="titleMedium" style={[styles.sensorValue, { color: '#00E676' }]}>{sensor.dissolvedOxygen.toFixed(1)} mg/L</Text>
                             </View>
                         </View>
                     )}
-                    
-                    <Button 
-                        mode="contained" 
-                        onPress={() => router.push(`/production/cages/${cage.id}` as any)} 
-                        style={{ marginTop: 15, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.3)' }}
-                    >
-                        Manage Cage
-                    </Button>
                 </View>
             </BlurView>
         );
@@ -114,62 +149,52 @@ export default function FarmerDashboard() {
         <View style={{ flex: 1 }}>
             <ScrollView 
                 contentContainerStyle={styles.container}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="white" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#00E5FF" />}
             >
                 <View style={styles.header}>
-                    <IconButton icon="home" iconColor="white" onPress={() => router.push('/')} />
-                    <Text variant="headlineSmall" style={{ fontWeight: 'bold', flex: 1, color: 'white', letterSpacing: 0.5 }}>Farm Telemetry</Text>
-                    <IconButton icon="plus" mode="contained" containerColor="rgba(255,255,255,0.2)" iconColor="white" size={24} onPress={() => router.push('/production/cages/create' as any)} />
+                    <Text variant="headlineSmall" style={styles.pageTitle}>Command Center</Text>
+                    <Button mode="contained" buttonColor="#00E5FF" textColor="#0F2027" icon="plus" style={{ borderRadius: 50 }} onPress={() => router.push('/production/cages/create' as any)}>
+                        Deploy Node
+                    </Button>
                 </View>
+
+                {/* AI Insights Panel */}
+                {!loading && renderAICard()}
 
                 {/* Dashboard Stats */}
                 <View style={styles.statsRow}>
-                    <BlurView intensity={20} tint="light" style={styles.statCard}>
+                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
                         <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#4FC3F7' }}>{cages.length}</Text>
-                            <Text variant="labelMedium" style={{ color: 'rgba(255,255,255,0.8)' }}>Total Cages</Text>
+                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#FFFFFF' }}>{cages.length}</Text>
+                            <Text variant="labelMedium" style={styles.statLabel}>Active Nodes</Text>
                         </View>
                     </BlurView>
                     
-                    <BlurView intensity={20} tint="light" style={styles.statCard}>
+                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
                         <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#00E676' }}>{totalFish >= 1000 ? (totalFish/1000).toFixed(1)+'k' : totalFish}</Text>
-                            <Text variant="labelMedium" style={{ color: 'rgba(255,255,255,0.8)' }}>Live Fish</Text>
+                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#00E5FF' }}>{totalFish >= 1000 ? (totalFish/1000).toFixed(1)+'k' : totalFish}</Text>
+                            <Text variant="labelMedium" style={styles.statLabel}>Biomass (pcs)</Text>
                         </View>
                     </BlurView>
 
-                    <BlurView intensity={20} tint="light" style={styles.statCard}>
+                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
                         <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#FFB74D' }}>{cages.length - cagesInUse}</Text>
-                            <Text variant="labelMedium" style={{ color: 'rgba(255,255,255,0.8)' }}>Empty</Text>
+                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#FF9100' }}>{cages.length - cagesInUse}</Text>
+                            <Text variant="labelMedium" style={styles.statLabel}>Idle</Text>
                         </View>
                     </BlurView>
                 </View>
 
-                {/* ERP Actions */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, gap: 10 }}>
-                    <Button mode="contained" icon="credit-card" style={styles.actionBtn} buttonColor="rgba(255,255,255,0.15)">
-                        Credit
-                    </Button>
-                    <Button mode="contained" icon="shield-check" style={styles.actionBtn} buttonColor="rgba(255,255,255,0.15)">
-                        Insurance
-                    </Button>
-                    <Button mode="contained" icon="leaf" style={styles.actionBtn} buttonColor="rgba(0, 230, 118, 0.2)">
-                        Carbon
-                    </Button>
-                </View>
-
-                <Text variant="titleLarge" style={styles.sectionTitle}>Cage Network</Text>
+                <Text variant="titleLarge" style={styles.sectionTitle}>Live Telemetry</Text>
 
                 {loading ? (
-                    <ActivityIndicator style={{ marginTop: 40 }} color="white" />
+                    <ActivityIndicator style={{ marginTop: 60 }} color="#00E5FF" size="large" />
                 ) : (
                     <View>
                         {cages.length === 0 ? (
-                            <View style={{ alignItems: 'center', marginTop: 40 }}>
-                                <Avatar.Icon icon="fish-off" size={80} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} color="white" />
-                                <Text style={{ color: 'rgba(255,255,255,0.7)', marginVertical: 15 }}>No cages detected in your network.</Text>
-                                <Button mode="contained" buttonColor="#0288D1" onPress={() => router.push('/production/cages/create' as any)}>Deploy First Cage</Button>
+                            <View style={styles.emptyState}>
+                                <Avatar.Icon icon="satellite-variant" size={80} style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} color="rgba(255,255,255,0.3)" />
+                                <Text style={{ color: 'rgba(255,255,255,0.5)', marginVertical: 20 }}>No IoT nodes detected in your network.</Text>
                             </View>
                         ) : (
                             cages.map(renderCageCard)
@@ -182,16 +207,30 @@ export default function FarmerDashboard() {
 }
 
 const styles = StyleSheet.create({
-    container: { flexGrow: 1, padding: 20, paddingBottom: 50 },
-    header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
-    statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30, gap: 10 },
-    statCard: { flex: 1, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-    statPad: { alignItems: 'center', paddingVertical: 20 },
-    actionBtn: { flex: 1 },
-    sectionTitle: { fontWeight: 'bold', marginBottom: 20, color: 'white', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-    cageCard: { marginBottom: 20, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-    cardPad: { padding: 20 },
+    container: { flexGrow: 1, padding: 25, paddingBottom: 50 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 },
+    pageTitle: { fontWeight: '900', color: 'white', letterSpacing: 0.5 },
+    
+    aiCard: { marginBottom: 30, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 230, 118, 0.3)', backgroundColor: 'rgba(0, 230, 118, 0.05)' },
+    aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    aiTitle: { fontWeight: 'bold', color: 'white', letterSpacing: 0.5 },
+    
+    statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 35, gap: 15 },
+    statCard: { flex: 1, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    statPad: { alignItems: 'center', paddingVertical: 25 },
+    statLabel: { color: 'rgba(255,255,255,0.5)', marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 },
+    
+    sectionTitle: { fontWeight: 'bold', marginBottom: 20, color: 'white', letterSpacing: 0.5 },
+    
+    cageCard: { marginBottom: 25, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 229, 255, 0.15)', elevation: 5, shadowColor: '#00E5FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
+    cardPad: { padding: 25 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    sensorRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
-    sensorItem: { flex: 1, alignItems: 'center' }
+    
+    sensorRow: { flexDirection: 'row', marginTop: 25, paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', justifyContent: 'space-between' },
+    sensorItem: { flex: 1, alignItems: 'center' },
+    sensorDivider: { width: 1, height: '80%', backgroundColor: 'rgba(255,255,255,0.1)', alignSelf: 'center' },
+    sensorLabel: { color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 5 },
+    sensorValue: { fontWeight: 'bold' },
+    
+    emptyState: { alignItems: 'center', marginTop: 60, padding: 40, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }
 });

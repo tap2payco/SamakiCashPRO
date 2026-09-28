@@ -1,39 +1,44 @@
 import { Elysia } from 'elysia'
-import { supabase } from '../config/supabase'
+import { jwt } from '@elysiajs/jwt'
 
 export const isAuthenticated = (app: Elysia) =>
-    app.derive(async ({ headers, set }) => {
-        // Offline Mode Bypass
-        if (process.env.SKIP_AUTH === 'true') {
-            return {
-                user: {
-                    id: 'offline-user-id', 
-                    email: 'offline@samakipro.com',
-                    aud: 'authenticated',
-                    role: 'authenticated',
-                    app_metadata: {},
-                    user_metadata: {},
-                    created_at: new Date().toISOString()
+    app
+        .use(
+            jwt({
+                name: 'jwt',
+                secret: process.env.JWT_SECRET || 'samakipro-fallback-secret'
+            })
+        )
+        .derive(async ({ headers, jwt }) => {
+            // Offline Mode Bypass
+            if (process.env.SKIP_AUTH === 'true') {
+                return {
+                    user: {
+                        id: 'offline-user-id',
+                        role: 'FARMER'
+                    }
                 }
             }
-        }
 
-        const authHeader = headers['authorization']
-        // ... (rest of logic)
-        if (!authHeader) {
-            return { user: null }
-        }
+            const authHeader = headers['authorization']
+            if (!authHeader) {
+                return { user: null }
+            }
 
-        const token = authHeader.split(' ')[1]
-        if (!token) {
-            return { user: null }
-        }
+            const token = authHeader.split(' ')[1]
+            if (!token) {
+                return { user: null }
+            }
 
-        const { data: { user }, error } = await supabase.auth.getUser(token)
+            const payload = await jwt.verify(token)
+            if (!payload) {
+                return { user: null }
+            }
 
-        if (error || !user) {
-            return { user: null }
-        }
-
-        return { user }
-    })
+            return { 
+                user: { 
+                    id: payload.id as string, 
+                    role: payload.role as string 
+                } 
+            }
+        })

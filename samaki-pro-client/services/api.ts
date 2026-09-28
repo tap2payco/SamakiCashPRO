@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_URL = 'https://samakicashpro.onrender.com';
+export const API_URL = 'http://localhost:3000';
 
 const getHeaders = async () => {
     const headers: Record<string, string> = {

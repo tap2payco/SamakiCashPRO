@@ -2,32 +2,27 @@ import React from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface Props {
-    children: React.ReactNode;
-    style?: ViewStyle;
-    colors?: [string, string, ...string[]];
+interface GradientBackgroundProps {
+  children: React.ReactNode;
+  style?: ViewStyle;
 }
 
-export default function GradientBackground({ 
-    children, 
-    style,
-    // Default ocean/tech aesthetic
-    colors = ['#001a33', '#003366', '#004d99'] 
-}: Props) {
-    return (
-        <LinearGradient
-            colors={colors}
-            style={[styles.container, style]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-        >
-            {children}
-        </LinearGradient>
-    );
+export default function GradientBackground({ children, style }: GradientBackgroundProps) {
+  return (
+    <LinearGradient
+      // Clean Enterprise Light Theme Gradient
+      colors={['#F8F9FA', '#E3F2FD', '#CAF0F8']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.container, style]}
+    >
+      {children}
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    }
+  container: {
+    flex: 1,
+  },
 });

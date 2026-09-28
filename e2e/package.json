@@ -1,0 +1,20 @@
+{
+    "name": "samaki-pro-e2e",
+    "version": "1.0.0",
+    "description": "End-to-end tests for Samaki Pro (backend API + Expo Web client)",
+    "private": true,
+    "scripts": {
+        "test": "npx playwright test",
+        "test:api": "npx playwright test --project=api",
+        "test:web": "npx playwright test --project=web-desktop",
+        "test:mobile": "npx playwright test --project=web-mobile",
+        "test:ui": "npx playwright test --ui",
+        "test:headed": "npx playwright test --headed",
+        "report": "npx playwright show-report"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.52.0",
+        "@types/node": "^22.15.29",
+        "typescript": "^5.8.3"
+    }
+}

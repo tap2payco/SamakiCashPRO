@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia'
 import { CageService } from './cage.service'
 import { isAuthenticated } from '../../middlewares/auth.middleware'
 import prisma from '../../config/prisma'
+import { InsuranceService } from '../insurance/insurance.service'
 
 export const cageController = new Elysia({ prefix: '/cages' })
     .use(isAuthenticated)
@@ -14,18 +15,9 @@ export const cageController = new Elysia({ prefix: '/cages' })
             return { error: 'Unauthorized' }
         }
 
-        // Resolve profile
-        const profile = await prisma.profile.findUnique({
-            where: { userId: user.id }
-        })
-        if (!profile) {
-            set.status = 400
-            return { error: 'Profile not found' }
-        }
-
         return await cageService.createCage({
             ...body,
-            farmerId: profile.id
+            farmerId: user.id
         })
     }, {
         body: t.Object({
@@ -43,12 +35,7 @@ export const cageController = new Elysia({ prefix: '/cages' })
             return { error: 'Unauthorized' }
         }
 
-        const profile = await prisma.profile.findUnique({
-            where: { userId: user.id }
-        })
-        if (!profile) return []
-
-        return await cageService.getFarmerCages(profile.id)
+        return await cageService.getFarmerCages(user.id)
     })
 
     // Get cage details
@@ -72,7 +59,7 @@ export const cageController = new Elysia({ prefix: '/cages' })
 
     // Record sensor reading ( IoT )
     .post('/:id/readings', async ({ params: { id }, body, cageService }) => {
-        const reading = await cageService.recordSensorReading(id, body as any)
+        const reading = await cageService.recordReading(id, body as any)
         
         // Phase 3: Trigger Parametric Insurance Check on every new reading
         const insuranceService = new InsuranceService()
