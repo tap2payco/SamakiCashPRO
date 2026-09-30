@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform, useWindowDimensions, ScrollView } from 'react-native';
-import { Text, IconButton, TouchableRipple, Avatar, Button } from 'react-native-paper';
-import { Stack } from 'expo-router'; // Fix import
+import { View, StyleSheet, Platform, useWindowDimensions, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, IconButton, TouchableRipple, Avatar } from 'react-native-paper';
+import { Slot as ExpoSlot, useRouter as useExpoRouter, usePathname as useExpoPathname, Redirect as ExpoRedirect } from 'expo-router';
 import { useAuth } from '~/contexts/AuthContext';
 import { BlurView } from 'expo-blur';
-
-// Temporary fix from previous thought block string - correctly importing expo-router instead of RNRF
-import { Slot as ExpoSlot, useRouter as useExpoRouter, usePathname as useExpoPathname, Redirect as ExpoRedirect } from 'expo-router';
+import { useAppTheme } from '~/theme';
+import ThemeToggle from '~/components/ui/ThemeToggle';
 
 export default function ERPLayout() {
     const { user, logout } = useAuth();
@@ -14,6 +13,7 @@ export default function ERPLayout() {
     const pathname = useExpoPathname();
     const { width } = useWindowDimensions();
     const isDesktop = width >= 800 || Platform.OS === 'web';
+    const { colors, radii, isSunMode, language, setLanguage } = useAppTheme();
     
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -29,15 +29,44 @@ export default function ERPLayout() {
         { title: 'Vendor Operations', route: '/logistics', icon: 'shield-account', roles: ['VENDOR', 'ADMIN'] },
         { title: 'Cold Chain Assets', route: '/fintech/assets', icon: 'solar-panel-large', roles: ['VENDOR', 'ADMIN'] },
         { title: 'Micro-Insurance', route: '/fintech/insurance', icon: 'shield-check', roles: ['FARMER', 'ADMIN'] },
+        { title: 'Design System', route: '/design-system', icon: 'palette-swatch-outline', roles: ['FARMER', 'VENDOR', 'ADMIN'] },
     ];
 
     const filteredLinks = navigationLinks.filter(link => link.roles.includes(user.role));
 
     const renderSidebar = () => (
-        <BlurView intensity={70} tint="light" style={[styles.sidebar, !isDesktop && styles.mobileSidebar, !isDesktop && !mobileMenuOpen && { display: 'none' }]}>
-            <View style={styles.brandBox}>
-                <Avatar.Icon icon="fish" size={40} style={{ backgroundColor: 'rgba(0, 180, 216, 0.2)' }} color="#00B4D8" />
-                <Text variant="titleLarge" style={styles.brandText}>Samaki ERP</Text>
+        <View 
+            style={[
+                styles.sidebar, 
+                {
+                    backgroundColor: colors.surfaceCard,
+                    borderRightColor: isSunMode ? colors.borderStrong : colors.border,
+                    borderRightWidth: isSunMode ? 2 : 1,
+                },
+                !isDesktop && styles.mobileSidebar, 
+                !isDesktop && !mobileMenuOpen && { display: 'none' }
+            ]}
+        >
+            <View 
+                style={[
+                    styles.brandBox, 
+                    { 
+                        borderBottomColor: isSunMode ? colors.borderStrong : colors.border,
+                        borderBottomWidth: 1,
+                    }
+                ]}
+            >
+                <Avatar.Icon 
+                    icon="fish" 
+                    size={40} 
+                    style={{ backgroundColor: colors.primaryWash }} 
+                    color={colors.primary} 
+                />
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text variant="titleMedium" style={[styles.brandText, { color: colors.ink }]}>Samaki Pro</Text>
+                    <Text style={{ fontSize: 11, color: colors.inkMuted }}>Lake Victoria ERP</Text>
+                </View>
+                <ThemeToggle variant="header" />
             </View>
 
             <ScrollView contentContainerStyle={styles.navScroll}>
@@ -46,40 +75,99 @@ export default function ERPLayout() {
                     return (
                         <TouchableRipple 
                             key={index}
-                            style={[styles.navItem, isActive && styles.navItemActive]}
+                            style={[
+                                styles.navItem, 
+                                {
+                                    borderRadius: radii.md,
+                                    backgroundColor: isActive 
+                                        ? (isSunMode ? colors.primaryWash : colors.primaryWash) 
+                                        : 'transparent',
+                                    borderColor: isActive 
+                                        ? (isSunMode ? colors.borderStrong : colors.primary) 
+                                        : 'transparent',
+                                    borderWidth: isActive ? 1 : 0,
+                                }
+                            ]}
                             onPress={() => {
                                 router.push(item.route as any);
                                 if (!isDesktop) setMobileMenuOpen(false);
                             }}
                         >
                             <View style={styles.navRow}>
-                                <IconButton icon={item.icon} size={20} iconColor={isActive ? '#00B4D8' : '#495057'} style={{ margin: 0 }} />
-                                <Text style={[styles.navText, isActive && styles.navTextActive]}>{item.title}</Text>
+                                <IconButton 
+                                    icon={item.icon} 
+                                    size={20} 
+                                    iconColor={isActive ? colors.primary : colors.inkMuted} 
+                                    style={{ margin: 0 }} 
+                                />
+                                <Text 
+                                    style={[
+                                        styles.navText, 
+                                        { 
+                                            color: isActive ? colors.primary : colors.ink,
+                                            fontWeight: isActive ? '700' : '500',
+                                        }
+                                    ]}
+                                >
+                                    {item.title}
+                                </Text>
                             </View>
                         </TouchableRipple>
                     );
                 })}
             </ScrollView>
 
-            <View style={styles.userBox}>
-                <Avatar.Icon icon="account" size={36} color="#00B4D8" style={{ backgroundColor: 'rgba(0, 180, 216, 0.1)' }} />
+            <View 
+                style={[
+                    styles.userBox, 
+                    { 
+                        borderTopColor: isSunMode ? colors.borderStrong : colors.border,
+                        borderTopWidth: 1,
+                        backgroundColor: colors.surfaceSunken,
+                    }
+                ]}
+            >
+                <Avatar.Icon 
+                    icon="account" 
+                    size={36} 
+                    color={colors.primary} 
+                    style={{ backgroundColor: colors.primaryWash }} 
+                />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text variant="bodyMedium" style={{ color: '#0B2027', fontWeight: 'bold' }} numberOfLines={1}>{user.fullName || 'User'}</Text>
-                    <Text variant="labelSmall" style={{ color: '#6C757D' }}>{user.role}</Text>
+                    <Text 
+                        variant="bodyMedium" 
+                        style={{ color: colors.ink, fontWeight: '700' }} 
+                        numberOfLines={1}
+                    >
+                        {user.fullName || 'User'}
+                    </Text>
+                    <Text variant="labelSmall" style={{ color: colors.inkMuted }}>{user.role}</Text>
                 </View>
-                <IconButton icon="logout" size={20} iconColor="#FF5252" onPress={logout} />
+                <IconButton icon="logout" size={20} iconColor={colors.critical} onPress={logout} />
             </View>
-        </BlurView>
+        </View>
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.surfacePage }]}>
             {/* Mobile Header Bar */}
             {!isDesktop && (
-                <BlurView intensity={70} tint="light" style={styles.mobileHeader}>
-                    <IconButton icon="menu" iconColor="#0B2027" onPress={() => setMobileMenuOpen(!mobileMenuOpen)} />
-                    <Text variant="titleMedium" style={{ color: '#0B2027', fontWeight: 'bold', flex: 1, paddingLeft: 10 }}>Samaki ERP</Text>
-                </BlurView>
+                <View 
+                    style={[
+                        styles.mobileHeader, 
+                        {
+                            backgroundColor: colors.surfaceCard,
+                            borderBottomColor: isSunMode ? colors.borderStrong : colors.border,
+                            borderBottomWidth: isSunMode ? 2 : 1,
+                        }
+                    ]}
+                >
+                    <IconButton icon="menu" iconColor={colors.ink} onPress={() => setMobileMenuOpen(!mobileMenuOpen)} />
+                    <Text variant="titleMedium" style={{ color: colors.ink, fontWeight: '800', flex: 1, paddingLeft: 10 }}>
+                        Samaki Pro
+                    </Text>
+                    <ThemeToggle variant="header" />
+                </View>
             )}
 
             <View style={styles.bodyFlex}>
@@ -94,24 +182,49 @@ export default function ERPLayout() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    mobileHeader: { flexDirection: 'row', alignItems: 'center', height: 60, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)', backgroundColor: 'rgba(255,255,255,0.85)' },
-    
+    mobileHeader: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 60, 
+        paddingHorizontal: 12, 
+    },
     bodyFlex: { flex: 1, flexDirection: 'row' },
-    
-    sidebar: { width: 260, borderRightWidth: 1, borderRightColor: 'rgba(0,0,0,0.1)', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.85)' },
-    mobileSidebar: { position: 'absolute', zIndex: 100, height: '100%', left: 0, shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 10 },
-    
-    brandBox: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' },
-    brandText: { color: '#0B2027', fontWeight: 'bold', marginLeft: 15, letterSpacing: 0.5 },
-    
-    navScroll: { padding: 15 },
-    navItem: { paddingVertical: 12, paddingHorizontal: 15, borderRadius: 12, marginBottom: 5 },
-    navItemActive: { backgroundColor: 'rgba(0, 180, 216, 0.1)', borderWidth: 1, borderColor: 'rgba(0, 180, 216, 0.3)' },
+    sidebar: { 
+        width: 270, 
+        justifyContent: 'space-between',
+        zIndex: 50,
+    },
+    mobileSidebar: { 
+        position: 'absolute', 
+        zIndex: 100, 
+        height: '100%', 
+        left: 0, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 4, height: 0 }, 
+        shadowOpacity: 0.15, 
+        shadowRadius: 10 
+    },
+    brandBox: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        padding: 16, 
+    },
+    brandText: { 
+        fontWeight: '800', 
+        letterSpacing: 0.2 
+    },
+    navScroll: { padding: 12 },
+    navItem: { 
+        paddingVertical: 10, 
+        paddingHorizontal: 12, 
+        marginBottom: 4 
+    },
     navRow: { flexDirection: 'row', alignItems: 'center' },
-    navText: { marginLeft: 15, color: '#495057', fontWeight: '500', fontSize: 14 },
-    navTextActive: { color: '#00B4D8', fontWeight: 'bold' },
-    
-    userBox: { flexDirection: 'row', alignItems: 'center', padding: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.1)', backgroundColor: 'rgba(248, 249, 250, 0.9)' },
-    
+    navText: { marginLeft: 12, fontSize: 14 },
+    userBox: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        padding: 14, 
+    },
     contentArea: { flex: 1, position: 'relative' }
 });

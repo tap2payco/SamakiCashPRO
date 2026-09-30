@@ -1,17 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Animated, Easing } from 'react-native';
-import { Text, Button, Avatar, ActivityIndicator, IconButton, ProgressBar } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, RefreshControl, Animated, Easing, TouchableOpacity } from 'react-native';
+import { Text, Avatar, ActivityIndicator, IconButton, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { api } from '~/services/api';
 import { useAuth } from '~/contexts/AuthContext';
-import { BlurView } from 'expo-blur';
+import { useAppTheme } from '~/theme';
+import {
+    PageHeader,
+    SyncBar,
+    MetricCard,
+    AlertItem,
+    StatusBadge,
+    SourceTag,
+    Button,
+    GlassCard,
+} from '~/components/ui';
 
 export default function FarmerDashboard() {
     const router = useRouter();
     const { user } = useAuth();
+    const { colors, typography, radii, spacing, language, isSunMode } = useAppTheme();
     const [cages, setCages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [alertAcknowledged, setAlertAcknowledged] = useState(false);
+
+    const isSw = language === 'sw';
 
     // AI Animation Pulse
     const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -21,7 +35,7 @@ export default function FarmerDashboard() {
 
         Animated.loop(
             Animated.sequence([
-                Animated.timing(pulseAnim, { toValue: 1.5, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1.25, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
                 Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
             ])
         ).start();
@@ -46,40 +60,64 @@ export default function FarmerDashboard() {
 
     const totalFish = cages.reduce((sum, cage) => sum + (cage.batches?.[0]?.currentQuantity || 0), 0);
     const cagesInUse = cages.filter(c => c.batches?.length > 0 && c.batches[0].status === 'ACTIVE').length;
+    const cageWithHighTemp = cages.find(c => c.sensors?.[0]?.temperature > 28);
 
     const renderAICard = () => {
-        // Mock AI logic based on data
-        let aiMessage = "System nominal. All telemetry parameters are within optimal ranges.";
-        let aiColor = "#00E676"; // Emerald
+        let aiMessage = isSw
+            ? "Mifumo yote ya data iko katika hali salama na viwango vinavyokubalika."
+            : "System nominal. All telemetry parameters are within optimal ranges.";
 
-        const cageWithHighTemp = cages.find(c => c.sensors?.[0]?.temperature > 28);
         if (cageWithHighTemp) {
-            aiMessage = `ALERT: High temperature (${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C) detected in ${cageWithHighTemp.name}. Recommend activating aeration.`;
-            aiColor = "#FF9100"; // Amber
+            aiMessage = isSw
+                ? `TAHADHARI: Joto la maji limepanda (${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C) katika ${cageWithHighTemp.name}. Inashauriwa kuwezesha hewa (aeration).`
+                : `ALERT: High temperature (${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C) detected in ${cageWithHighTemp.name}. Recommend activating aeration.`;
         }
 
         return (
-            <BlurView intensity={40} tint="dark" style={styles.aiCard}>
-                <View style={styles.cardPad}>
-                    <View style={styles.row}>
-                        <View style={styles.aiHeader}>
-                            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                                <Avatar.Icon icon="brain" size={32} style={{ backgroundColor: 'rgba(0,0,0,0.3)' }} color={aiColor} />
-                            </Animated.View>
-                            <Text variant="titleMedium" style={styles.aiTitle}>Samaki AI Engine</Text>
-                        </View>
-                        <Text style={{ color: aiColor, fontWeight: 'bold' }}>LIVE</Text>
+            <GlassCard 
+                style={[
+                    styles.aiCard, 
+                    { 
+                        borderColor: isSunMode ? colors.borderStrong : (cageWithHighTemp ? colors.watchFill : colors.primary),
+                        borderWidth: isSunMode ? 2 : 1,
+                        backgroundColor: colors.surfaceCard,
+                    }
+                ]}
+            >
+                <View style={styles.row}>
+                    <View style={styles.aiHeader}>
+                        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                            <Avatar.Icon 
+                                icon="brain" 
+                                size={32} 
+                                style={{ backgroundColor: cageWithHighTemp ? colors.watchWash : colors.primaryWash }} 
+                                color={cageWithHighTemp ? colors.watch : colors.primary} 
+                            />
+                        </Animated.View>
+                        <Text style={[styles.aiTitle, { color: colors.ink }]}>
+                            {isSw ? 'Injini ya Samaki AI' : 'Samaki AI Intelligence Engine'}
+                        </Text>
                     </View>
-                    <Text variant="bodyMedium" style={{ color: 'rgba(255,255,255,0.8)', marginTop: 15, lineHeight: 22 }}>
-                        {aiMessage}
-                    </Text>
+                    <StatusBadge status={cageWithHighTemp ? 'watch' : 'ok'} size="sm" />
+                </View>
+
+                <Text style={[styles.aiText, { color: colors.inkMuted }]}>
+                    {aiMessage}
+                </Text>
+
+                <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <SourceTag source="sensor" timestamp="Live" />
                     {cageWithHighTemp && (
-                        <Button mode="contained" buttonColor={aiColor} textColor="#0F2027" style={{ marginTop: 15, borderRadius: 50 }}>
-                            Auto-Adjust Aeration
+                        <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onPress={() => {}}
+                        >
+                            {isSw ? 'Washa Hewa' : 'Auto-Adjust Aeration'}
                         </Button>
                     )}
                 </View>
-            </BlurView>
+            </GlassCard>
         );
     };
 
@@ -89,112 +127,198 @@ export default function FarmerDashboard() {
         const isActive = !!batch;
 
         return (
-            <BlurView intensity={30} tint="dark" style={styles.cageCard} key={cage.id}>
-                <View style={styles.cardPad}>
-                    <View style={styles.row}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Avatar.Icon 
-                                icon="grid" 
-                                size={44} 
-                                style={{ backgroundColor: isActive ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.1)' }} 
-                                color={isActive ? '#00E5FF' : 'rgba(255,255,255,0.4)'} 
-                            />
-                            <View style={{ marginLeft: 15 }}>
-                                <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'white' }}>{cage.name}</Text>
-                                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{cage.type.toUpperCase()}</Text>
-                            </View>
+            <GlassCard 
+                key={cage.id}
+                style={[
+                    styles.cageCard,
+                    {
+                        borderColor: isSunMode ? colors.borderStrong : colors.border,
+                        borderWidth: isSunMode ? 2 : 1,
+                        marginBottom: spacing.space3,
+                    }
+                ]}
+            >
+                <View style={styles.row}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Avatar.Icon 
+                            icon="grid" 
+                            size={40} 
+                            style={{ backgroundColor: isActive ? colors.primaryWash : colors.surfaceSunken }} 
+                            color={isActive ? colors.primary : colors.inkMuted} 
+                        />
+                        <View style={{ marginLeft: 12 }}>
+                            <Text style={[styles.cageName, { color: colors.ink }]}>{cage.name}</Text>
+                            <Text style={[styles.cageType, { color: colors.inkMuted }]}>{cage.type}</Text>
                         </View>
-                        <IconButton icon="chevron-right" iconColor="white" onPress={() => router.push(`/production/cages/${cage.id}` as any)} />
                     </View>
-
-                    {batch ? (
-                        <View style={{ marginTop: 20 }}>
-                            <View style={styles.row}>
-                                <Text variant="bodyMedium" style={{ color: 'rgba(255,255,255,0.7)' }}>Stock: <Text style={{ color: 'white', fontWeight: 'bold' }}>{batch.species}</Text></Text>
-                                <Text variant="bodyMedium" style={{ fontWeight: 'bold', color: '#00E5FF' }}>{batch.currentQuantity} pcs</Text>
-                            </View>
-                            <ProgressBar progress={batch.currentQuantity / cage.capacity} color="#00E5FF" style={{ marginTop: 10, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                            <Text variant="labelSmall" style={{ marginTop: 8, color: 'rgba(255,255,255,0.5)' }}>Est. Harvest: {batch.estimatedHarvestDate ? new Date(batch.estimatedHarvestDate).toLocaleDateString() : 'N/A'}</Text>
-                        </View>
-                    ) : (
-                        <View style={{ marginTop: 20, padding: 15, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
-                            <Text style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>Awaiting Stock Deployment</Text>
-                        </View>
-                    )}
-
-                    {sensor && (
-                        <View style={styles.sensorRow}>
-                            <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={styles.sensorLabel}>TEMP</Text>
-                                <Text variant="titleMedium" style={[styles.sensorValue, { color: sensor.temperature > 28 ? '#FF9100' : '#00E676' }]}>{sensor.temperature.toFixed(1)}°</Text>
-                            </View>
-                            <View style={styles.sensorDivider} />
-                            <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={styles.sensorLabel}>pH</Text>
-                                <Text variant="titleMedium" style={[styles.sensorValue, { color: '#00E5FF' }]}>{sensor.ph.toFixed(1)}</Text>
-                            </View>
-                            <View style={styles.sensorDivider} />
-                            <View style={styles.sensorItem}>
-                                <Text variant="labelSmall" style={styles.sensorLabel}>OXYGEN</Text>
-                                <Text variant="titleMedium" style={[styles.sensorValue, { color: '#00E676' }]}>{sensor.dissolvedOxygen.toFixed(1)} mg/L</Text>
-                            </View>
-                        </View>
-                    )}
+                    <StatusBadge status={isActive ? 'ok' : 'no-reading'} size="sm" />
                 </View>
-            </BlurView>
+
+                {batch ? (
+                    <View style={{ marginTop: 14 }}>
+                        <View style={styles.row}>
+                            <Text style={{ color: colors.inkMuted, fontSize: 13 }}>
+                                {isSw ? 'Samaki:' : 'Stock:'} <Text style={{ color: colors.ink, fontWeight: '700' }}>{batch.species}</Text>
+                            </Text>
+                            <Text style={{ fontWeight: '800', color: colors.primary, fontSize: 14 }}>
+                                {batch.currentQuantity?.toLocaleString()} pcs
+                            </Text>
+                        </View>
+                        <ProgressBar 
+                            progress={batch.currentQuantity / cage.capacity} 
+                            color={colors.primary} 
+                            style={{ marginTop: 8, height: 6, borderRadius: 3, backgroundColor: colors.surfaceSunken }} 
+                        />
+                    </View>
+                ) : (
+                    <View style={[styles.awaitingBox, { backgroundColor: colors.surfaceSunken, borderRadius: radii.sm }]}>
+                        <Text style={{ color: colors.inkMuted, fontSize: 13, fontStyle: 'italic', textAlign: 'center' }}>
+                            {isSw ? 'Inasubiri kuwekwa vifaranga' : 'Awaiting stock deployment'}
+                        </Text>
+                    </View>
+                )}
+
+                {sensor && (
+                    <View style={[styles.sensorRow, { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 14, paddingTop: 12 }]}>
+                        <View style={styles.sensorItem}>
+                            <Text style={[styles.sensorLabel, { color: colors.inkMuted }]}>{isSw ? 'JOTO' : 'TEMP'}</Text>
+                            <Text style={[styles.sensorVal, { color: sensor.temperature > 28 ? colors.watch : colors.ok }]}>
+                                {sensor.temperature.toFixed(1)}°C
+                            </Text>
+                        </View>
+                        <View style={[styles.sensorDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.sensorItem}>
+                            <Text style={[styles.sensorLabel, { color: colors.inkMuted }]}>pH</Text>
+                            <Text style={[styles.sensorVal, { color: colors.ink }]}>
+                                {sensor.ph.toFixed(1)}
+                            </Text>
+                        </View>
+                        <View style={[styles.sensorDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.sensorItem}>
+                            <Text style={[styles.sensorLabel, { color: colors.inkMuted }]}>{isSw ? 'OKSIJENI' : 'OXYGEN'}</Text>
+                            <Text style={[styles.sensorVal, { color: colors.ok }]}>
+                                {sensor.dissolvedOxygen.toFixed(1)} mg/L
+                            </Text>
+                        </View>
+                    </View>
+                )}
+            </GlassCard>
         );
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: colors.surfacePage }}>
             <ScrollView 
-                contentContainerStyle={styles.container}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#00E5FF" />}
+                contentContainerStyle={[styles.container, { padding: spacing.space4, paddingBottom: 60 }]}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
             >
-                <View style={styles.header}>
-                    <Text variant="headlineSmall" style={styles.pageTitle}>Command Center</Text>
-                    <Button mode="contained" buttonColor="#00E5FF" textColor="#0F2027" icon="plus" style={{ borderRadius: 50 }} onPress={() => router.push('/production/cages/create' as any)}>
-                        Deploy Node
+                {/* Design System Page Header */}
+                <PageHeader 
+                    title={isSw ? 'Kituo cha Uendeshaji' : 'Command Center'}
+                    subtitle={isSw ? 'Hali ya Vizimba Ziwa Victoria' : 'Lake Victoria Cage Telemetry'}
+                    locationChip="Mwanza Gulf"
+                    categoryChip="Cages"
+                />
+
+                {/* Live Sync Bar */}
+                <View style={{ marginVertical: spacing.space2 }}>
+                    <SyncBar state="synced" time="14:32" />
+                </View>
+
+                {/* Critical Alert Item if temperature is high */}
+                {cageWithHighTemp && !alertAcknowledged && (
+                    <View style={{ marginVertical: spacing.space2 }}>
+                        <AlertItem 
+                            status="watch"
+                            title={isSw ? `Joto la maji linapanda katika ${cageWithHighTemp.name}` : `Water temperature is rising in ${cageWithHighTemp.name}`}
+                            description={isSw 
+                                ? `${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C iliyorekodiwa. Sitisha chakula au washa hewa kuzuia upungufu wa oksijeni.` 
+                                : `${cageWithHighTemp.sensors[0].temperature.toFixed(1)}°C recorded. Pause feeding or activate aeration to prevent oxygen depletion.`}
+                            source="sensor"
+                            sourceTimestamp="2 min ago"
+                            onAcknowledge={() => setAlertAcknowledged(true)}
+                        />
+                    </View>
+                )}
+
+                {/* AI Intelligence Panel */}
+                {!loading && renderAICard()}
+
+                {/* Key Performance Indicators (MetricCards) */}
+                <Text style={[styles.sectionTitle, { color: colors.ink, marginTop: spacing.space3, marginBottom: spacing.space2 }]}>
+                    {isSw ? 'Muhtasari wa Uzalishaji' : 'Operational Metrics'}
+                </Text>
+                
+                <View style={styles.metricsGrid}>
+                    <MetricCard 
+                        label={isSw ? 'Vizimba Vilivyo Hai' : 'Active Cages'}
+                        value={cages.length}
+                        status="ok"
+                        source="sensor"
+                    />
+                    <MetricCard 
+                        label={isSw ? 'Kiasi cha Samaki' : 'Live Biomass'}
+                        value={totalFish >= 1000 ? `${(totalFish / 1000).toFixed(1)}k` : totalFish}
+                        unit="pcs"
+                        status="ok"
+                        source="sensor"
+                    />
+                </View>
+
+                <View style={[styles.metricsGrid, { marginTop: spacing.space3 }]}>
+                    <MetricCard 
+                        label={isSw ? 'Mapato ya Mwezi' : 'Revenue this month'}
+                        value="8,300,000"
+                        currencyPrefix="TZS"
+                        trend={{ direction: 'up', percent: 8, comparisonText: isSw ? 'ongezeko' : 'vs last mo' }}
+                        source="demo"
+                    />
+                    <MetricCard 
+                        label={isSw ? 'Vizimba Visivyotumika' : 'Idle Nodes'}
+                        value={cages.length - cagesInUse}
+                        status={cages.length - cagesInUse > 0 ? 'watch' : 'ok'}
+                        source="manual"
+                    />
+                </View>
+
+                {/* Telemetry Section Header with Action */}
+                <View style={[styles.row, { marginTop: spacing.space4, marginBottom: spacing.space3 }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.ink }]}>
+                        {isSw ? 'Ufuatiliaji wa Moja kwa Moja' : 'Live Telemetry & Sensors'}
+                    </Text>
+                    <Button 
+                        variant="primary" 
+                        size="sm" 
+                        icon="plus" 
+                        onPress={() => router.push('/production/cages/create' as any)}
+                    >
+                        {isSw ? 'Ongeza Kizimba' : 'Deploy Node'}
                     </Button>
                 </View>
 
-                {/* AI Insights Panel */}
-                {!loading && renderAICard()}
-
-                {/* Dashboard Stats */}
-                <View style={styles.statsRow}>
-                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
-                        <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#FFFFFF' }}>{cages.length}</Text>
-                            <Text variant="labelMedium" style={styles.statLabel}>Active Nodes</Text>
-                        </View>
-                    </BlurView>
-                    
-                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
-                        <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#00E5FF' }}>{totalFish >= 1000 ? (totalFish/1000).toFixed(1)+'k' : totalFish}</Text>
-                            <Text variant="labelMedium" style={styles.statLabel}>Biomass (pcs)</Text>
-                        </View>
-                    </BlurView>
-
-                    <BlurView intensity={25} tint="dark" style={styles.statCard}>
-                        <View style={styles.statPad}>
-                            <Text variant="displaySmall" style={{ fontWeight: 'bold', color: '#FF9100' }}>{cages.length - cagesInUse}</Text>
-                            <Text variant="labelMedium" style={styles.statLabel}>Idle</Text>
-                        </View>
-                    </BlurView>
-                </View>
-
-                <Text variant="titleLarge" style={styles.sectionTitle}>Live Telemetry</Text>
-
                 {loading ? (
-                    <ActivityIndicator style={{ marginTop: 60 }} color="#00E5FF" size="large" />
+                    <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} size="large" />
                 ) : (
                     <View>
                         {cages.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <Avatar.Icon icon="satellite-variant" size={80} style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} color="rgba(255,255,255,0.3)" />
-                                <Text style={{ color: 'rgba(255,255,255,0.5)', marginVertical: 20 }}>No IoT nodes detected in your network.</Text>
+                            <View style={[styles.emptyWrap, { backgroundColor: colors.surfaceCard, borderColor: colors.border, borderRadius: radii.lg }]}>
+                                <Avatar.Icon 
+                                    icon="satellite-variant" 
+                                    size={64} 
+                                    style={{ backgroundColor: colors.surfaceSunken }} 
+                                    color={colors.inkMuted} 
+                                />
+                                <Text style={{ color: colors.inkMuted, marginVertical: 14, textAlign: 'center' }}>
+                                    {isSw ? 'Hakuna vihisi vya IoT vilivyopatikana kwenye mtandao wako.' : 'No IoT nodes detected in your network.'}
+                                </Text>
+                                <Button 
+                                    variant="primary" 
+                                    size="md" 
+                                    icon="plus" 
+                                    onPress={() => router.push('/production/cages/create' as any)}
+                                >
+                                    {isSw ? 'Ongeza Kizimba cha Kwanza' : 'Deploy First Node'}
+                                </Button>
                             </View>
                         ) : (
                             cages.map(renderCageCard)
@@ -207,30 +331,22 @@ export default function FarmerDashboard() {
 }
 
 const styles = StyleSheet.create({
-    container: { flexGrow: 1, padding: 25, paddingBottom: 50 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 },
-    pageTitle: { fontWeight: '900', color: 'white', letterSpacing: 0.5 },
-    
-    aiCard: { marginBottom: 30, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 230, 118, 0.3)', backgroundColor: 'rgba(0, 230, 118, 0.05)' },
-    aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    aiTitle: { fontWeight: 'bold', color: 'white', letterSpacing: 0.5 },
-    
-    statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 35, gap: 15 },
-    statCard: { flex: 1, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-    statPad: { alignItems: 'center', paddingVertical: 25 },
-    statLabel: { color: 'rgba(255,255,255,0.5)', marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 },
-    
-    sectionTitle: { fontWeight: 'bold', marginBottom: 20, color: 'white', letterSpacing: 0.5 },
-    
-    cageCard: { marginBottom: 25, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0, 229, 255, 0.15)', elevation: 5, shadowColor: '#00E5FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-    cardPad: { padding: 25 },
+    container: { flexGrow: 1 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    
-    sensorRow: { flexDirection: 'row', marginTop: 25, paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', justifyContent: 'space-between' },
+    aiCard: { padding: 16, marginBottom: 16 },
+    aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    aiTitle: { fontWeight: '700', fontSize: 15 },
+    aiText: { marginTop: 10, lineHeight: 20, fontSize: 14 },
+    sectionTitle: { fontWeight: '800', fontSize: 18, letterSpacing: -0.2 },
+    metricsGrid: { flexDirection: 'row', gap: 12 },
+    cageCard: { padding: 16 },
+    cageName: { fontWeight: '700', fontSize: 16 },
+    cageType: { fontSize: 12, marginTop: 2 },
+    awaitingBox: { padding: 12, marginTop: 12 },
+    sensorRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     sensorItem: { flex: 1, alignItems: 'center' },
-    sensorDivider: { width: 1, height: '80%', backgroundColor: 'rgba(255,255,255,0.1)', alignSelf: 'center' },
-    sensorLabel: { color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 5 },
-    sensorValue: { fontWeight: 'bold' },
-    
-    emptyState: { alignItems: 'center', marginTop: 60, padding: 40, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }
+    sensorDivider: { width: 1, height: 28 },
+    sensorLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 2 },
+    sensorVal: { fontWeight: '800', fontSize: 15 },
+    emptyWrap: { alignItems: 'center', padding: 32, borderWidth: 1 }
 });

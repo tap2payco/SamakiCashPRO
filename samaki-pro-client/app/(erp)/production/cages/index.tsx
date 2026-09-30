@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { Text, Card, FAB, ActivityIndicator, Searchbar, Chip, useTheme } from 'react-native-paper';
+import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { api } from '~/services/api';
+import { useAppTheme } from '~/theme';
+import {
+    PageHeader,
+    Input,
+    SegmentedControl,
+    GlassCard,
+    StatusBadge,
+    SourceTag,
+    EmptyState,
+    Button,
+} from '~/components/ui';
 
 export default function CageListScreen() {
     const router = useRouter();
-    const theme = useTheme();
+    const { colors, typography, radii, spacing, language, isSunMode } = useAppTheme();
     const [cages, setCages] = useState<any[]>([]);
     const [filteredCages, setFilteredCages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState('ALL'); // ALL, ACTIVE, EMPTY
+
+    const isSw = language === 'sw';
 
     useEffect(() => {
         fetchCages();
@@ -29,7 +43,13 @@ export default function CageListScreen() {
             console.error(err);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        fetchCages();
     };
 
     const filterCages = () => {
@@ -50,74 +70,121 @@ export default function CageListScreen() {
 
     const renderItem = ({ item }: { item: any }) => {
         const batch = item.batches?.[0];
-        return (
-            <Card style={styles.card} onPress={() => router.push(`/farmer/cages/${item.id}`)}>
-                <Card.Content>
-                    <View style={styles.row}>
-                        <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{item.name}</Text>
-                        <Chip textStyle={{ fontSize: 10, height: 12, lineHeight: 12 }} style={{ height: 24 }}>{item.type}</Chip>
-                    </View>
-                    <Text variant="bodySmall" style={{ color: '#666', marginTop: 4 }}>Example Location • Capacity: {item.capacity}</Text>
+        const sensor = item.sensors?.[0];
+        const isActive = !!batch;
 
-                    <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#EEE' }}>
-                        {batch ? (
-                            <View style={styles.row}>
-                                <Text style={{ color: theme.colors.primary, fontWeight: 'bold' }}>{batch.species}</Text>
-                                <Text>{batch.currentQuantity} fish</Text>
-                            </View>
-                        ) : (
-                            <Text style={{ color: '#999', fontStyle: 'italic' }}>No active batch</Text>
-                        )}
+        return (
+            <GlassCard 
+                key={item.id}
+                style={[
+                    styles.card,
+                    {
+                        borderColor: isSunMode ? colors.borderStrong : colors.border,
+                        borderWidth: isSunMode ? 2 : 1,
+                        marginBottom: spacing.space3,
+                    }
+                ]}
+            >
+                <View style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.cageName, { color: colors.ink }]}>{item.name}</Text>
+                        <Text style={[styles.cageType, { color: colors.inkMuted }]}>
+                            {item.type} • {isSw ? 'Uwezo:' : 'Capacity:'} {item.capacity?.toLocaleString()}
+                        </Text>
                     </View>
-                </Card.Content>
-            </Card>
+                    <StatusBadge status={isActive ? 'ok' : 'no-reading'} size="sm" />
+                </View>
+
+                <View style={[styles.detailBox, { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 12, paddingTop: 10 }]}>
+                    {batch ? (
+                        <View style={styles.row}>
+                            <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>
+                                {batch.species}
+                            </Text>
+                            <Text style={{ color: colors.ink, fontWeight: '800', fontSize: 14 }}>
+                                {batch.currentQuantity?.toLocaleString()} {isSw ? 'samaki' : 'fish'}
+                            </Text>
+                        </View>
+                    ) : (
+                        <Text style={{ color: colors.inkMuted, fontStyle: 'italic', fontSize: 13 }}>
+                            {isSw ? 'Hakuna kundi lililowekwa' : 'No active batch'}
+                        </Text>
+                    )}
+                </View>
+
+                <View style={[styles.row, { marginTop: 10, alignItems: 'center' }]}>
+                    <SourceTag source={sensor ? 'sensor' : 'manual'} timestamp={sensor ? '14:30' : undefined} />
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        icon="chevron-right"
+                        onPress={() => router.push(`/production/cages/${item.id}` as any)}
+                    >
+                        {isSw ? 'Angalia' : 'View'}
+                    </Button>
+                </View>
+            </GlassCard>
         );
     };
 
     return (
-        <View style={styles.container}>
-            <Searchbar
-                placeholder="Search cages..."
-                onChangeText={setSearchQuery}
-                value={searchQuery}
-                style={styles.search}
-            />
+        <View style={[styles.container, { backgroundColor: colors.surfacePage }]}>
+            <View style={{ paddingHorizontal: spacing.space4, paddingTop: spacing.space3 }}>
+                <PageHeader 
+                    title={isSw ? 'Orodha ya Vizimba' : 'Cage Inventory'}
+                    subtitle={isSw ? 'Usimamizi wa Vizimba vya Majini' : 'Lake Victoria Aquaculture Production'}
+                    locationChip="Mwanza Gulf"
+                    categoryChip="Cages"
+                />
 
-            <View style={styles.filters}>
-                <Chip selected={filter === 'ALL'} onPress={() => setFilter('ALL')} style={styles.chip}>All</Chip>
-                <Chip selected={filter === 'ACTIVE'} onPress={() => setFilter('ACTIVE')} style={styles.chip}>Active</Chip>
-                <Chip selected={filter === 'EMPTY'} onPress={() => setFilter('EMPTY')} style={styles.chip}>Empty</Chip>
+                <Input
+                    placeholder={isSw ? 'Tafuta vizimba...' : 'Search cages...'}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    containerStyle={{ marginVertical: 8 }}
+                />
+
+                <SegmentedControl 
+                    options={[
+                        { value: 'ALL', label: isSw ? 'Vyote' : 'All' },
+                        { value: 'ACTIVE', label: isSw ? 'Vilivyo Hai' : 'Active' },
+                        { value: 'EMPTY', label: isSw ? 'Visivyo na Samaki' : 'Empty' },
+                    ]}
+                    selectedValue={filter}
+                    onSelect={setFilter}
+                    style={{ marginBottom: 12 }}
+                />
             </View>
 
             {loading ? (
-                <ActivityIndicator style={{ marginTop: 20 }} />
+                <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} size="large" />
             ) : (
                 <FlatList
                     data={filteredCages}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={styles.list}
-                    ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 30, color: '#999' }}>No cages found</Text>}
+                    contentContainerStyle={[styles.list, { paddingHorizontal: spacing.space4, paddingBottom: 80 }]}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+                    ListEmptyComponent={
+                        <EmptyState 
+                            title={isSw ? 'Hakuna vizimba vilivyopatikana' : 'No cages found'}
+                            description={isSw ? 'Ongeza kizimba kipya kuanza uzalishaji.' : 'Deploy your first cage to begin production.'}
+                            actionLabel={isSw ? 'Ongeza Kizimba' : 'Deploy Cage'}
+                            onAction={() => router.push('/production/cages/create' as any)}
+                        />
+                    }
                 />
             )}
-
-            <FAB
-                icon="plus"
-                style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-                color="white"
-                onPress={() => router.push('/farmer/cages/create')}
-            />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F5F5F5' },
-    search: { margin: 15, elevation: 2, backgroundColor: 'white' },
-    filters: { flexDirection: 'row', paddingHorizontal: 15, marginBottom: 10 },
-    chip: { marginRight: 8 },
-    list: { paddingHorizontal: 15, paddingBottom: 80 },
-    card: { marginBottom: 10, backgroundColor: 'white' },
+    container: { flex: 1 },
+    list: { paddingTop: 6 },
+    card: { padding: 14 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    fab: { position: 'absolute', margin: 16, right: 0, bottom: 0 },
+    cageName: { fontWeight: '700', fontSize: 16 },
+    cageType: { fontSize: 12, marginTop: 2 },
+    detailBox: { width: '100%' }
 });

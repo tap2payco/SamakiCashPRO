@@ -8,7 +8,7 @@ import { useAuth } from '~/contexts/AuthContext';
 
 export default function LandingScreen() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
     
     // Entry Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -29,7 +29,7 @@ export default function LandingScreen() {
         ]).start();
     }, [fadeAnim, slideAnim]);
 
-    if (loading) return null;
+    if (isLoading) return null;
     if (user) return <Redirect href="/dashboard" />;
 
     return (
